@@ -65,3 +65,10 @@ python3 zerodayslater-ui.py
 
 - [Threat Injection Shell](docs/mockups/zer0DAYSlater_terminal_mockup.txt)
 - [Session Replay View](docs/mockups/zer0DAYSlater_session_replay_mockup.txt)
+
+## [ MOCKUP VIEWER – GitHub Pages ]
+
+Browse formatted mockups directly on GitHub Pages:
+
+- [Threat Injection Shell](https://gnomeman4201.github.io/zer0DAYSlater/mockups/md/zer0DAYSlater_terminal_mockup)
+- [Session Replay View](https://gnomeman4201.github.io/zer0DAYSlater/mockups/md/zer0DAYSlater_session_replay_mockup)

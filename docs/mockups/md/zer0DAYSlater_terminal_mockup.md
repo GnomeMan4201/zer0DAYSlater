@@ -1,0 +1,56 @@
+# zer0DAYSlater terminal mockup
+
+```shell
+kali@slater-core:~/zer0_days_later$ ./z0slater.sh
+
+╔════════════════════════════════════════════════════════════╗
+║     zer0DAYSlater v1.4 – GitOps Threat Injection Shell     ║
+╠════════════════════════════════════════════════════════════╣
+║ Repo           : /home/kali/projectX                       ║
+║ Target Branch  : main                                      ║
+║ Tripwire Mode  : Enabled                                   ║
+║ IOC Engine     : Active (shodan + virustotal)              ║
+║ Surveillance   : Enabled                                   ║
+╚════════════════════════════════════════════════════════════╝
+
+ [1] Inject Decoy IOC into Git Commit
+ [2] Trigger CI/CD Canary Chain
+ [3] Launch Behavioral Scanner
+ [4] View Tripwire Monitor
+ [5] Generate Incident Report
+ [6] Wipe Evidence Trail
+ [Q] Exit
+
+> 1
+
+[+] Injecting decoy IOC into commit...
+    - File: src/util/convert.py
+    - Payload: Suspicious API key format + fake IP trace
+    - Tag: [ANOMALY-426]
+[+] Commit complete: 9cf8231 - "update data converter logic"
+
+> 2
+
+[+] Triggering CI/CD...
+[+] Webhook hit detected
+[+] Canary flag tripped inside pipeline: `stage: test`
+[+] Simulated SOC alert generated
+
+> 4
+
+╔══════════════════════════════════════════════════════╗
+║           TRIPWIRE MONITOR – DECAY STATE ACTIVE      ║
+╠══════════════════════════════════════════════════════╣
+║ [✓] Decoy IP accessed in build script                 ║
+║ [✓] CI job attempted connection to fake sinkhole      ║
+║ [!] SOC flagged API behavior as suspicious            ║
+║ [✓] Tripwire log: tripwire_hits.log                   ║
+╚══════════════════════════════════════════════════════╝
+
+> 5
+
+[+] Compiling incident summary...
+[+] PDF report generated: reports/incident_0605_tripwire.pdf
+[+] Ready for red team handoff
+
+```
