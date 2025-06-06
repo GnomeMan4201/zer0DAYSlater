@@ -58,3 +58,10 @@ cd zer0DAYSlater
 chmod +x install.sh
 ./install.sh
 python3 zerodayslater-ui.py
+
+## [ MOCKUPS ]
+
+> Simulated terminal sessions of zer0DAYSlater GitOps attacks:
+
+- [Threat Injection Shell](docs/mockups/zer0DAYSlater_terminal_mockup.txt)
+- [Session Replay View](docs/mockups/zer0DAYSlater_session_replay_mockup.txt)
