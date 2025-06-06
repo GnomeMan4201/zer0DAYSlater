@@ -10,6 +10,11 @@
   Built for GitOps, CI/CD pipelines, and post-exfil ghostwalks.
 </p>
 
+<p align="center">
+  <img src="assets/zer0dayslater_promo.png" width="700"><br>
+  <img src="assets/zer0dayslater_promo2.png" width="700">
+</p>
+
 ---
 
 ## [ PHILOSOPHY ]
@@ -37,3 +42,24 @@ This is not just post-exploitation — it’s cognitive warfare embedded directl
 
 ## [ MODULES ]
 
+| Module                  | Description                                                  |
+|-------------------------|--------------------------------------------------------------|
+| `recon_engine.py`       | Passive recon using Shodan, WHOIS, VirusTotal               |
+| `signal_injector.py`    | Injects fake IOCs and noisy decoy artifacts                  |
+| `behavioral_scanner.py` | Flags suspicious patterns like `eval`, `subprocess`, etc.    |
+| `threat_attributor.py`  | Enriches indicators with attacker fingerprint data           |
+| `tripwire_monitor.py`   | Detects interaction with bait and logs hits                  |
+| `reportlab_integration` | Auto-generates PDFs w/ IOC activity & attribution summary    |
+| `payload_chain_llm.py`  | (v2) LLM-based chaining for contextual payload expansion     |
+| `zerodayslater-ui.py`   | Main CLI launcher (LANimals-style shell)                     |
+
+---
+
+## [ QUICKSTART ]
+
+```bash
+git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
+cd zer0DAYSlater
+chmod +x install.sh
+./install.sh
+python3 zerodayslater-ui.py
