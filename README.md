@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/zerodayslater-banner.png" width="600">
-</p>
-
 <h3 align="center"><code>A MISDIRECTION-DRIVEN OFFENSIVE TOOLKIT FOR COGNITIVE DISRUPTION</code></h3>
 
 <p align="center">
@@ -11,7 +7,6 @@
 </p>
 
 <p align="center">
-  <img src="assets/zer0dayslater_promo.png" width="700"><br>
   <img src="assets/zer0dayslater_promo2.png" width="700">
 </p>
 
