@@ -7,8 +7,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/zer0dayslater_promo2.png" width="700">
+  <img src="assets/banner.png" alt="zer0DAYSlater banner" width="100%">
 </p>
+
+
 
 ---
 
