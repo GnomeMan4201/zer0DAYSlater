@@ -1,0 +1,36 @@
+{
+  "name": "lune",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">     <img src=\"lune/assets/LUNE_LOGO.png\" alt=\"LUNE Logo\" width=\"300\"/>  </p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GnomeMan4201/Lune.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GnomeMan4201/Lune/issues"
+  },
+  "homepage": "https://github.com/GnomeMan4201/Lune#readme",
+  "devDependencies": {
+    "danger": "^13.0.4",
+    "dotenv": "^16.5.0",
+    "node-fetch": "^3.3.2"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "is-url": "^1.2.4",
+    "regexr": "^2.0.4",
+    "strip-ansi": "^7.1.0",
+    "whois": "^2.14.2"
+  }
+}
