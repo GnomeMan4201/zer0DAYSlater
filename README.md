@@ -1,9 +1,9 @@
 <h3 align="center"><code>zeroDAYSlater
-    OFFENSIVE TOOLKIT FOR COGNITIVE DISRUPTION</code></h3>
+    
+  OFFENSIVE TOOLKIT FOR DISRUPTION and MISDIRECTION</code></h3>
 
 <p align="center">
-  <b>zer0DAYSlater</b> is a deception toolkit for flooding systems with false leads, injected IOCs, decoys, and noise.<br>
-  Built for GitOps, CI/CD pipelines, and post exfil.
+  <b>0days</b> is a deception toolkit for flooding systems with false leads, injected IOCs, decoys, and noise.<br>
 </p>
 
 <p align="center">
