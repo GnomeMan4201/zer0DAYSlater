@@ -1,7 +1,7 @@
-<h3 align="center"><code>A MISDIRECTION-DRIVEN OFFENSIVE TOOLKIT FOR COGNITIVE DISRUPTION</code></h3>
+<h3 align="center"><code>OFFENSIVE TOOLKIT FOR COGNITIVE DISRUPTION</code></h3>
 
 <p align="center">
-  <b>zer0 DAYS later</b> is a psychological deception toolkit for flooding systems with false leads, injected IOCs, decoys, and noise.<br>
+  <b>zer0DAYSlater</b> is a deception toolkit for flooding systems with false leads, injected IOCs, decoys, and noise.<br>
   Built for GitOps, CI/CD pipelines, and post exfil.
 </p>
 
@@ -15,11 +15,10 @@
 
 ## [ PHILOSOPHY ]
 
-Traditional defense is overrun. Speed and misdirection now matter more than brute force.  
+Traditional defense is overrun. Speed and misdirection now are as important especially in those situations stealth isnt an option.
 `zer0 DAYS later` is built for one purpose: **to manipulate perception**.
 
-Every artifact is intentional. Every decoy is weaponized.  
-..it’s cognitive warfare embedded directly into the operational flow.
+Every artifact is intentional......it’s cognitive warfare embedded directly into the operational flow.
 
 ---
 
