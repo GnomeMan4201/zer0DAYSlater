@@ -1,4 +1,5 @@
-<h3 align="center"><code>OFFENSIVE TOOLKIT FOR COGNITIVE DISRUPTION</code></h3>
+<h3 align="center"><code>zeroDAYSlater
+    OFFENSIVE TOOLKIT FOR COGNITIVE DISRUPTION</code></h3>
 
 <p align="center">
   <b>zer0DAYSlater</b> is a deception toolkit for flooding systems with false leads, injected IOCs, decoys, and noise.<br>
