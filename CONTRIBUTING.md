@@ -1,4 +1,4 @@
-# Contributing to zer0DAYSlater
+# Contributing
 
 Thanks for considering contributing! Here’s how to get started:
 

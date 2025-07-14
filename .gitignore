@@ -1,7 +1,7 @@
 # Python cache and compiled files
 __pycache__/
 *.py[cod]
-*.class
+*$py.class
 
 # Virtual environment folder
 .venv/
