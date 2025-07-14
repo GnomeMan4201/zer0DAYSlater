@@ -1,4 +1,4 @@
-# Contributing
+# Contributing Guidelines
 
 Thanks for considering contributing! Here’s how to get started:
 
