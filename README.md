@@ -6,7 +6,13 @@
 
 ## Overview
 
-*Your project description here...*
+*Describe your project in a sentence or two.*
+
+## Features
+
+- Feature 1
+- Feature 2
+- Feature 3
 
 ## Setup
 
@@ -18,12 +24,12 @@ pip install -r requirements.txt
 
 ## Usage
 
-Instructions on how to use your project.
+Explain how to use your project here.
 
 ## Contributing
 
-Feel free to open issues or submit pull requests!
+Please read CONTRIBUTING.md for contribution guidelines.
 
 ## License
 
-MIT License - see LICENSE file.
+MIT License - see LICENSE
