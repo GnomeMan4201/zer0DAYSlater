@@ -1,24 +1,11 @@
-# Python cache and compiled files
+
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environment folder
-.venv/
-
-# Build and distribution
-build/
-dist/
-*.egg-info/
-
-# Documentation build folder
-docs/_build/
-
-# Pytest cache folder
-.pytest_cache/
-
-# VS Code config folder
-.vscode/
-
-# Log files
+*.pyc
 *.log
+*.pem
+*.key
+loot_log.json
+*.pdf
+encrypted_payload.txt
+aes_key.txt
+.venv/
