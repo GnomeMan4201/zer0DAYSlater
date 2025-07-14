@@ -1,2 +1,24 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.class
+
+# Virtual environment folder
 .venv/
-**/_build/
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+
+# Documentation build folder
+docs/_build/
+
+# Pytest cache folder
+.pytest_cache/
+
+# VS Code config folder
+.vscode/
+
+# Log files
+*.log

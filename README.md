@@ -1,12 +1,16 @@
 # zer0DAYSlater
 
+<p align="center">
+  <img src="zer0DAYSlater_logo.png" alt="zer0DAYSlater Logo" width="180" />
+</p>
+
 [![Build Status](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/python-ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/python-ci.yml)
 [![Docs](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/docs.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/docs.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
-*Describe your project in a sentence or two.*
+*One-liner describing what zer0DAYSlater does.*
 
 ## Features
 
@@ -14,22 +18,28 @@
 - Feature 2
 - Feature 3
 
+## Demo
+
+<p align="center">
+  <img src="demo.gif" alt="Demo of zer0DAYSlater" width="600" />
+</p>
+
 ## Setup
 
-\`\`\`bash
+```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-\`\`\`
+```
 
 ## Usage
 
-Explain how to use your project here.
+*Explain usage here.*
 
 ## Contributing
 
-Please read CONTRIBUTING.md for contribution guidelines.
+Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License - see LICENSE
+MIT License © 2025 Your Name
