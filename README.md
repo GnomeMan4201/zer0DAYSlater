@@ -1,66 +1,29 @@
-<h3 align="center"><code>zeroDAYSlater
-    
-  OFFENSIVE TOOLKIT FOR DISRUPTION and MISDIRECTION</code></h3>
+# zer0DAYSlater
 
-<p align="center">
-  <b>0days</b> is a deception toolkit for flooding systems with false leads, injected IOCs, decoys, and noise.<br>
-</p>
+[![Build Status](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/python-ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/python-ci.yml)
+[![Docs](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/docs.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/docs.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<p align="center">
-  <img src="assets/banner.png" alt="zer0DAYSlater banner" width="100%">
-</p>
+## Overview
 
+*Your project description here...*
 
+## Setup
 
----
+\`\`\`bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\`\`\`
 
-## [ PHILOSOPHY ]
+## Usage
 
-Traditional defense is overrun. Speed and misdirection now are as important especially in those situations stealth isnt an option.
-`zer0 DAYS later` is built for one purpose: **to manipulate perception**.
+Instructions on how to use your project.
 
-Every artifact is intentional......it’s cognitive warfare embedded directly into the operational flow.
+## Contributing
 
----
+Feel free to open issues or submit pull requests!
 
-## [ FEATURES ]
+## License
 
-✅ Misdirection-first deception strategy  
-✅ Drop-in GitOps deployment (CI/CD-ready)  
-✅ Injects fake IOCs, decoy credentials, poisoned indicators  
-✅ Tripwire logs + behavioral scanners to trace interaction  
-✅ PDF report generation + enriched threat attribution  
-✅ Clean operator shell while noise floods the system  
-✅ LLM-powered payload expansion system (v2)  
-✅ Full modular CLI w/ themed UX (LANimals-inspired)  
-
----
-
-## [ MODULES ]
-
-| Module                  | Description                                                  |
-|-------------------------|--------------------------------------------------------------|
-| `recon_engine.py`       | Passive recon using Shodan, WHOIS, VirusTotal               |
-| `signal_injector.py`    | Injects fake IOCs and noisy decoy artifacts                  |
-| `behavioral_scanner.py` | Flags suspicious patterns like `eval`, `subprocess`, etc.    |
-| `threat_attributor.py`  | Enriches indicators with attacker fingerprint data           |
-| `tripwire_monitor.py`   | Detects interaction with bait and logs hits                  |
-| `reportlab_integration` | Auto-generates PDFs w/ IOC activity & attribution summary    |
-| `payload_chain_llm.py`  | (v2) LLM-based chaining for contextual payload expansion     |
-| `zerodayslater-ui.py`   | Main CLI launcher (LANimals-style shell)                     |
-
----
-
-## [ QUICKSTART ]
-
-```bash
-git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
-cd zer0DAYSlater
-chmod +x install.sh
-./install.sh
-python3 zerodayslater-ui.py
-
-Browse formatted mockups directly on GitHub Pages:
-
-- [Threat Injection Shell](https://gnomeman4201.github.io/zer0DAYSlater/mockups/md/zer0DAYSlater_terminal_mockup)
-- [Session Replay View](https://gnomeman4201.github.io/zer0DAYSlater/mockups/md/zer0DAYSlater_session_replay_mockup)
+MIT License - see LICENSE file.
