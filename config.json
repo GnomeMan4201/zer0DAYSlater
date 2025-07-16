@@ -1,0 +1,7 @@
+{
+  "https_endpoint": "https://yourdomain.tld/exfil",
+  "websocket_endpoint": "wss://yourdomain.tld/ws",
+  "dns_domain": "exfil.yourdomain.tld",
+  "mqtt_broker": "broker.hivemq.com",
+  "mqtt_topic": "session_exfil_omega"
+}
