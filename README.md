@@ -1,35 +1,38 @@
 # zer0DAYSlater
 
-[![Build Status](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/python-ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/python-ci.yml)
-[![Docs](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/docs.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/docs.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Advanced post-exploitation framework with evasion, persistence, and covert C2 features.
 
-## Overview
-
-*Describe your project here.*
+---
 
 ## Features
+- Evasion techniques and process cloaking
+- Persistence and lateral movement
+- Covert command and control
 
-- Feature 1
-- Feature 2
-- Feature 3
+---
 
-## Setup
+## Installation
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+Clone and setup:
+
+    git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
+    cd zer0DAYSlater
+    # Follow setup instructions or run install scripts
+
+---
 
 ## Usage
 
-*Explain usage here.*
+Launch modules according to campaign requirements.
 
-## Contributing
+---
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+## Assets Preview
 
-## License
+![zer0DAYSlater Logo](assets/zer0DAYSlater_logo.png)
 
-MIT License © 2025 Your Name
+---
+
+## Legal Disclaimer
+
+These tools are intended strictly for authorized research, security testing, and educational purposes. Unauthorized use is prohibited. You are responsible for compliance with all applicable laws and regulations.
