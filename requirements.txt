@@ -1,0 +1,8 @@
+
+requests
+pycryptodome
+websockets
+fpdf
+fastapi
+uvicorn
+pynacl
