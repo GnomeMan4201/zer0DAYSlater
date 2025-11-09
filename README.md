@@ -2,7 +2,7 @@
 
 > Advanced post-exploitation framework with evasion, persistence, and covert C2 capabilities.
 
-![zer0DAYSlater Logo](assets/zer0DAYSlater_logo.png)
+![zer0DAYSlater Logo](assets/zer0DAYSlater_logo.jpg)
 
 ---
 
