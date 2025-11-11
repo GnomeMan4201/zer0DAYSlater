@@ -1,14 +1,16 @@
 import json
-from fpdf import FPDF
 from datetime import datetime
 
+from fpdf import FPDF
+
 LOOT_PATH = "loot_log.json"
+
 
 def generate_loot_report(output="loot_summary.pdf"):
     try:
         with open(LOOT_PATH, "r") as f:
             loot = json.load(f)
-    except:
+    except BaseException:
         print("[!] Failed to load loot log.")
         return
 
@@ -24,6 +26,7 @@ def generate_loot_report(output="loot_summary.pdf"):
 
     pdf.output(output)
     print(f"[+] Final loot summary exported: {output}")
+
 
 if __name__ == "__main__":
     generate_loot_report()

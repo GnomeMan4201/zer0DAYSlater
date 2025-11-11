@@ -2,13 +2,10 @@ import datetime
 import re
 import time
 
+
 # Example logic to simulate LLM-like interpretation for NL commands
 def parse_natural_command(command: str):
-    result = {
-        "action": None,
-        "filters": {},
-        "schedule": None
-    }
+    result = {"action": None, "filters": {}, "schedule": None}
 
     if "exfil" in command:
         result["action"] = "exfil"
@@ -28,16 +25,20 @@ def parse_natural_command(command: str):
         hour = int(match.group(1))
         if match.group(2) == "pm" and hour < 12:
             hour += 12
-        scheduled_time = datetime.datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
+        scheduled_time = datetime.datetime.now().replace(
+            hour=hour, minute=0, second=0, microsecond=0
+        )
         if scheduled_time < datetime.datetime.now():
             scheduled_time += datetime.timedelta(days=1)
         result["schedule"] = int(scheduled_time.timestamp())
 
     return result
 
+
 def wait_for_schedule(timestamp):
     while int(time.time()) < timestamp:
         time.sleep(10)
+
 
 def main():
     cmd = input("Enter LLM-style command: ")
@@ -45,12 +46,15 @@ def main():
     print("[+] Parsed command:", parsed)
 
     if parsed["schedule"]:
-        print(f"[i] Waiting until scheduled time: {datetime.datetime.fromtimestamp(parsed['schedule'])}")
+        print(
+            f"[i] Waiting until scheduled time: {datetime.datetime.fromtimestamp(parsed['schedule'])}"
+        )
         wait_for_schedule(parsed["schedule"])
 
     if parsed["action"] == "exfil":
         print("[*] Executing exfiltration... [SIMULATED]")
         # Hook into your exfil logic here
+
 
 if __name__ == "__main__":
     main()

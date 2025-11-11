@@ -1,16 +1,18 @@
 import curses
-import time
 import json
 import os
+import time
 from datetime import datetime
 
 LOOT_LOG_PATH = "loot_log.json"
+
 
 def load_loot():
     if not os.path.exists(LOOT_LOG_PATH):
         return []
     with open(LOOT_LOG_PATH, "r") as f:
         return json.load(f)
+
 
 def draw_ui(stdscr):
     curses.curs_set(0)
@@ -37,8 +39,10 @@ def draw_ui(stdscr):
         time.sleep(1)
         frame += 1
 
+
 def main():
     curses.wrapper(draw_ui)
+
 
 if __name__ == "__main__":
     main()

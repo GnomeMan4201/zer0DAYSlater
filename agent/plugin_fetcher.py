@@ -1,6 +1,9 @@
+import base64
 
-import requests, base64
+import requests
+
 from memory_loader import load_encrypted_plugin
+
 
 def fetch_and_run_plugin(agent_id, server_url):
     try:

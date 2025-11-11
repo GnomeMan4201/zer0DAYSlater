@@ -1,11 +1,11 @@
-
 import asyncio
 import json
-import base64
 import ssl
+
 import websockets
 
 TASK_QUEUE = {}
+
 
 async def handle_ws(websocket, path):
     try:
@@ -21,12 +21,14 @@ async def handle_ws(websocket, path):
     except Exception as e:
         print(f"[!] WebSocket connection error: {e}")
 
+
 async def main():
     ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_ctx.load_cert_chain("cert.pem", "key.pem")
 
     async with websockets.serve(handle_ws, "0.0.0.0", 8765, ssl=ssl_ctx):
         await asyncio.Future()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

