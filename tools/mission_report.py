@@ -1,15 +1,17 @@
-import json
-import os
 import base64
+import json
+from datetime import datetime
+
 from Crypto.Cipher import AES
 from fpdf import FPDF
-from datetime import datetime
+
 
 def decrypt_entry(line, key):
     raw = base64.b64decode(line)
     nonce, tag, ciphertext = raw[:16], raw[16:32], raw[32:]
     cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
     return json.loads(cipher.decrypt_and_verify(ciphertext, tag).decode())
+
 
 def generate_pdf_report(log_file, key_file, output="mission_report.pdf"):
     key = open(key_file, "rb").read()
@@ -19,7 +21,7 @@ def generate_pdf_report(log_file, key_file, output="mission_report.pdf"):
         for line in f:
             try:
                 entries.append(decrypt_entry(line.strip(), key))
-            except:
+            except BaseException:
                 continue
 
     pdf = FPDF()
@@ -34,6 +36,7 @@ def generate_pdf_report(log_file, key_file, output="mission_report.pdf"):
 
     pdf.output(output)
     print(f"[+] Report generated: {output}")
+
 
 if __name__ == "__main__":
     generate_pdf_report("session_memory.json", "session_key.bin")

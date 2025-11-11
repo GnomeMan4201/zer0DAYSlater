@@ -1,12 +1,14 @@
-
 import base64
-import os
 import json
+
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
+
 
 def derive_key(agent_id):
-    return agent_id.encode("utf-8")[:32].ljust(32, b"0")  # basic 32-byte agent-specific key
+    return agent_id.encode("utf-8")[:32].ljust(
+        32, b"0"
+    )  # basic 32-byte agent-specific key
+
 
 def load_encrypted_plugin(encrypted_blob, agent_id):
     try:

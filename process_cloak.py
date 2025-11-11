@@ -1,6 +1,5 @@
-import os
-import psutil
 import random
+
 
 def cloak_process():
     # Look for common system process names
@@ -8,6 +7,7 @@ def cloak_process():
     new_name = random.choice(candidates)
     try:
         import setproctitle
+
         setproctitle.setproctitle(new_name)
         print(f"[+] Cloaked process as: {new_name}")
     except ImportError:

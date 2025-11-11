@@ -1,11 +1,13 @@
-
 import base64
 import json
+
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
+
 def derive_key(agent_id):
     return agent_id.encode("utf-8")[:32].ljust(32, b"0")
+
 
 def encrypt_plugin(raw_code: str, agent_id: str) -> str:
     key = derive_key(agent_id)
@@ -16,12 +18,14 @@ def encrypt_plugin(raw_code: str, agent_id: str) -> str:
     package = {
         "nonce": base64.b64encode(nonce).decode(),
         "ciphertext": base64.b64encode(ciphertext).decode(),
-        "tag": base64.b64encode(tag).decode()
+        "tag": base64.b64encode(tag).decode(),
     }
     return json.dumps(package)
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 4:
         print("Usage: python plugin_encryptor.py <plugin.py> <agent_id> <output.txt>")
         exit(1)

