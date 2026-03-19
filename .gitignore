@@ -30,3 +30,5 @@ session_key.bin
 session_memory.json
 loot_log.json
 *.pdf
+backup_*/
+*.bak
