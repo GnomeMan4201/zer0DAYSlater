@@ -1,94 +1,54 @@
+<p align="center">
+  <img src="assets/zer0DAYSlater_logo.jpg" alt="zer0DAYSlater" width="340"/>
+</p>
+
 # zer0DAYSlater
 
-> Advanced post-exploitation framework with evasion, persistence, and covert C2 capabilities.
+**Post-exploitation framework — process cloaking, multi-channel C2, adaptive persistence, and LLM-driven operator interface.**
 
-![zer0DAYSlater Logo](assets/zer0DAYSlater_logo.jpg)
-
----
-
-## Overview
-
-`zer0DAYSlater` is an operator-centric, modular post-exploitation framework built for stealth, resilience, and operational control. Designed for advanced red team campaigns and security research, it includes:
-
-- Dynamic process cloaking and evasion  
-- Multi-channel exfiltration (DNS, HTTPS, MQTT, ICMP)  
-- Peer-to-peer mesh agent C2  
-- Live operator dashboard with interactive command execution  
-- Loot tagging, PDF generation, and session replay  
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.13%2B-blue.svg)](#)
 
 ---
 
-## Features
-
-- Evasion — memory loaders, process spoofing, sandbox detection  
-- Persistence — ghost daemons, lateral movement, kill switches  
-- Covert C2 — MQTT, DNS, and mTLS plugins for flexible communication  
-- LLM Command Parsing — natural-language interface for automation  
-- Mission Reporting — generates mission_report.pdf and loot summaries  
+zer0DAYSlater is an operator-centric post-exploitation framework built for stealth and resilience. It runs multi-channel C2 across DNS, HTTPS, MQTT, and ICMP, with a natural-language operator interface powered by a local LLM and a live TUI dashboard for session management.
 
 ---
 
-## Installation
+## Capabilities
 
-> Requires: Python 3.13+, Linux. A virtual environment is recommended.
+- `memory_loader.py` — in-memory payload execution without touching disk
+- `process_doppelganger.py` — process name spoofing via prctl
+- `evasion_win.py` — Windows-side evasion and sandbox detection
+- `persistence.py` — multi-vector persistence binding
+- `lateral.py` — authenticated lateral movement
+- `c2_mesh_agent.py` — peer-to-peer mesh agent with mTLS
+- `peer_auth.py` — symmetric key peer verification
+- `process_cloak.py` — process identity masking
+- `proxy_fallback_check.py` — C2 channel fallback logic
+- `llm_command_parser.py` — natural language command interface
+- `tui_dashboard.py` — live operator dashboard
 
+**C2 channels:** DNS, HTTPS, MQTT, ICMP
+
+---
+
+## Install
 ```bash
 git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
 cd zer0DAYSlater
-
-# Optional: create isolated venv
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install requirements
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Run campaign setup
 ./install_omega.sh
+./omega_campaign.sh
 ```
 
-Testing
+---
 
-chmod +x zer0DAYSlater_test_runner.sh
-./zer0DAYSlater_test_runner.sh
+## Legal
 
-Usage
+For authorized red team operations and security research in controlled environments only. Unauthorized use is prohibited.
 
-./omega_campaign.sh
-omega-operator
+---
 
-This drops you into an interactive Ω> shell to issue system-level commands via the operator interface.
-Example Modules
-
-    memory_loader.py – in-memory stealth execution
-
-    process_doppelganger.py – process name spoofing
-
-    peer_auth.py – peer verification using symmetric keys
-
-    tools/task_dispatcher.py – dispatch commands to agents
-
-    agent/ghost_daemon.py – stealthy persistence loop
-
-Assets Preview
-
-zer0DAYSlater Logo
-Legal Disclaimer
-
-These tools are intended strictly for authorized research, security testing, and educational purposes. Unauthorized use is prohibited.
-
-    Authorization Notice:
-    Use only in environments where you have explicit legal authorization.
-    You are solely responsible for compliance with all applicable laws and regulations.
-
-Known Dependency Notice
-
-scapy==2.6.1 is present in requirements.txt and currently has a known deserialization vulnerability (see Safety ID 80587).
-If you use Scapy, only process trusted inputs or isolate its usage. This will be updated once a patched version is available.
-Author
-
-GnomeMan4201
-dev.to/gnomeman4201
-
-github.com/GnomeMan4201
-
+*zer0DAYSlater // badBANANA research // GnomeMan4201*
