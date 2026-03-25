@@ -1,4 +1,6 @@
 <p align="center">
+[![CI](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml)
+
   <img src="assets/zer0DAYSlater_logo.jpg" alt="zer0DAYSlater" width="340"/>
 </p>
 
