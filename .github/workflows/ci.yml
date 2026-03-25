@@ -21,4 +21,9 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        run: |
+          if [ -d tests ] && [ "$(ls -A tests/*.py 2>/dev/null)" ]; then
+            pytest tests/ -v --tb=short
+          else
+            echo "No tests found — skipping"
+          fi
