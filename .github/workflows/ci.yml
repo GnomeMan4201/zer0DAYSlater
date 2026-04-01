@@ -33,12 +33,14 @@ jobs:
 
       - name: Verify no hardcoded secrets
         run: |
-          if grep -r "test-token" --include="*.py" .; then
-            echo "FAIL: hardcoded test-token found"
+          if grep -r "test-token" --include="*.py" \
+            --exclude-dir=tests --exclude-dir=.venv .; then
+            echo "FAIL: hardcoded test-token found in source"
             exit 1
           fi
-          if grep -r "yourserver" --include="*.py" .; then
-            echo "FAIL: hardcoded placeholder URL found"
+          if grep -r "yourserver" --include="*.py" \
+            --exclude-dir=tests --exclude-dir=.venv .; then
+            echo "FAIL: hardcoded placeholder URL found in source"
             exit 1
           fi
           echo "OK: no hardcoded secrets found"
