@@ -20,20 +20,22 @@ def draw_ui(stdscr):
     h, w = stdscr.getmaxyx()
     frame = 0
 
-    for _ in range(5):
+    while True:
+        key = stdscr.getch()
+        if key == ord('q') or key == 27:
+            break
+
         stdscr.clear()
-
         stdscr.addstr(0, 0, "[ SESSION_EXFIL_OMEGA - LIVE DASHBOARD ]", curses.A_BOLD)
-        stdscr.addstr(2, 2, f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        stdscr.addstr(3, 2, f"Frame: {frame}")
-        stdscr.addstr(4, 2, f"Loot Entries: {len(load_loot())}")
+        stdscr.addstr(1, 0, "  press 'q' to exit", curses.A_DIM)
+        stdscr.addstr(3, 2, f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        stdscr.addstr(4, 2, f"Frame: {frame}")
+        stdscr.addstr(5, 2, f"Loot Entries: {len(load_loot())}")
+        stdscr.addstr(7, 0, "-" * (w - 1))
 
-        stdscr.addstr(6, 0, "-" * (w - 1))
-
-        # Loot gallery preview
         loot = load_loot()
         for i, item in enumerate(loot[-10:]):
-            stdscr.addstr(8 + i, 2, f"{item['timestamp']} :: {item['type']}")
+            stdscr.addstr(9 + i, 2, f"{item['timestamp']} :: {item['type']}")
 
         stdscr.refresh()
         time.sleep(1)
