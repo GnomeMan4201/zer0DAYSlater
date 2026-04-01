@@ -52,5 +52,5 @@ print(f"[✓] Peer {hs['peer']} verified={hs['verified']} fingerprint={hs['finge
 
 print("")
 print("[✓] Demo complete — system is functional")
-print("    To run live: cp .env.example .env && edit .env && source .env && ./omega_campaign.sh")
+print("    To run live: cp .env.example .env && nano .env && source .env && ./omega_campaign.sh")
 PYEOF
