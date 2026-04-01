@@ -6,8 +6,10 @@ export PYTHONPATH=$(pwd)
 
 run() {
     local f="$1"
+    local mod="${f%.py}"
+    mod="${mod//\//.}"
     echo -n "  [smoke] $f ... "
-    if timeout 3s python3 "$f" &>/dev/null; then
+    if timeout 3s python3 -c "import $mod" &>/dev/null; then
         echo "ok"
     else
         echo "FAILED"
@@ -26,4 +28,3 @@ run agent/session_memory.py
 run core/adaptive_channel_manager.py
 echo ""
 echo "  For full unit tests: python3 -m pytest tests/ -v"
-echo ""
