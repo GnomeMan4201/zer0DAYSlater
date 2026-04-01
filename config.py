@@ -8,3 +8,7 @@ CONFIG = {
     "c2_ws_url": os.environ.get("ZDS_C2_WS_URL", ""),
     "plugin_server": os.environ.get("ZDS_PLUGIN_SERVER", ""),
 }
+
+import os
+ZDS_MODE = os.environ.get("ZDS_MODE", "live")
+DEMO_MODE = ZDS_MODE == "demo"

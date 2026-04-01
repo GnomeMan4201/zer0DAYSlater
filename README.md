@@ -1,3 +1,36 @@
+## Quickstart
+```bash
+git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
+cd zer0DAYSlater
+./install_omega.sh
+./doctor.sh        # verify environment
+./demo.sh          # confirm system works without live infrastructure
+```
+
+Expected demo output:
+```
+[✓] DEMO_MODE active
+[✓] LLM parse: {action: exfil, ...}
+[✓] session_drift_monitor loaded
+[✓] entropy_capsule loaded
+[✓] payload_mutator loaded
+[Gen 0] HTTPS  ✓ OK  142ms
+[Gen 1] WS     ✓ OK   87ms
+[Gen 2] DNS    ✗ DETECTED  201ms
+[✓] Peer 127.0.0.1 verified=True
+[✓] Demo complete
+```
+
+For live use:
+```bash
+cp .env.example .env
+# edit .env with real values
+source .env
+./omega_campaign.sh
+```
+
+---
+
 <p align="center">
 
 [![CI](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml)
