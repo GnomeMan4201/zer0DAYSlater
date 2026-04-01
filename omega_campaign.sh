@@ -1,18 +1,34 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 source .venv/bin/activate
 clear
 echo -e "\033[92m"
-echo "███████╗███████╗███████╗ █████╗ ██╗     ";
-echo "██╔════╝██╔════╝██╔════╝██╔══██╗██║     ";
-echo "███████╗███████╗█████╗  ███████║██║     ";
-echo "╚════██║╚════██║██╔══╝  ██╔══██║██║     ";
-echo "███████║███████║███████╗██║  ██║███████╗";
-echo "╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝";
+echo "███████╗███████╗██████╗  █████╗ ██████╗  █████╗ ██╗   ██╗"
+echo "╚══███╔╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗╚██╗ ██╔╝"
+echo "  ███╔╝ █████╗  ██████╔╝██║  ██║██║  ██║███████║ ╚████╔╝ "
+echo " ███╔╝  ██╔══╝  ██╔══██╗██║  ██║██║  ██║██╔══██║  ╚██╔╝  "
+echo "███████╗███████╗██║  ██║╚█████╔╝██████╔╝██║  ██║   ██║   "
+echo "╚══════╝╚══════╝╚═╝  ╚═╝ ╚════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝  "
 echo -e "\033[0m"
+echo "[*] zer0DAYSlater campaign framework"
+echo ""
 
-echo "[*] Starting Session Exfil OMEGA Campaign..."
+# Verify required env vars
+MISSING=0
+for var in ZDS_AUTH_TOKEN ZDS_C2_WS_URL ZDS_HTTPS_ENDPOINT; do
+    if [ -z "${!var}" ]; then
+        echo "[!] Missing: $var"
+        MISSING=1
+    fi
+done
 
-sleep 1
-echo "[*] Launching operator dashboard..."
-sleep 1
-omega-operator
+if [ "$MISSING" -eq 1 ]; then
+    echo ""
+    echo "[!] Set required environment variables before running."
+    echo "    See install_omega.sh for the full list."
+    exit 1
+fi
+
+echo "[✓] Environment validated"
+echo "[*] Starting TUI dashboard..."
+python3 tui_dashboard.py
