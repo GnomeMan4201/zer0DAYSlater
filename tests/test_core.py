@@ -140,3 +140,209 @@ def test_etw_patch_bytes_correct():
             assert b == b"\x48\x33\xc0\xc3", f"ETW patch bytes wrong: {b.hex()}"
             return
     raise AssertionError("ETW patch line not found in evasion_win.py")
+
+
+# ── LLM Operator (structure only — no live Ollama required) ───────────────────
+
+def test_llm_operator_imports():
+    from llm_operator import parse_operator_command, _resolve_time_expression
+    assert callable(parse_operator_command)
+    assert callable(_resolve_time_expression)
+
+
+def test_resolve_midnight():
+    from llm_operator import _resolve_time_expression
+    result = _resolve_time_expression("exfil after midnight")
+    assert result is not None
+    import datetime
+    dt = datetime.datetime.fromisoformat(result)
+    assert dt.hour == 0
+    assert dt.minute == 1
+
+
+def test_resolve_relative_time_minutes():
+    from llm_operator import _resolve_time_expression
+    result = _resolve_time_expression("run in 30 minutes")
+    assert result is not None
+
+
+def test_resolve_pm_time():
+    from llm_operator import _resolve_time_expression
+    result = _resolve_time_expression("execute after 3pm")
+    assert result is not None
+    import datetime
+    dt = datetime.datetime.fromisoformat(result)
+    assert dt.hour == 15
+
+
+def test_resolve_no_time_returns_none():
+    from llm_operator import _resolve_time_expression
+    result = _resolve_time_expression("exfil user profiles quietly")
+    assert result is None
+
+
+def test_null_result_structure():
+    from llm_operator import _null_result
+    result = _null_result("test command", "test error")
+    for key in ("action", "targets", "schedule", "priority", "noise", "_error"):
+        assert key in result
+    assert result["action"] is None
+    assert result["_error"] == "test error"
+
+
+# ── Session Drift Monitor ─────────────────────────────────────────────────────
+
+def test_drift_monitor_imports():
+    from session_drift_monitor import SessionDriftMonitor, DriftType
+    assert SessionDriftMonitor is not None
+
+
+def test_baseline_established_on_first_ingest():
+    from session_drift_monitor import SessionDriftMonitor
+    monitor = SessionDriftMonitor()
+    action = {
+        "action": "exfil", "targets": ["user_profiles"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "test", "_error": None,
+    }
+    status = monitor.ingest(action)
+    assert monitor.baseline is not None
+    assert monitor.baseline.action == "exfil"
+    assert status["drift_score"] < 0.10  # first action may have minor structural signals
+
+
+def test_nominal_action_low_drift():
+    from session_drift_monitor import SessionDriftMonitor
+    monitor = SessionDriftMonitor()
+    base = {
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "base", "_error": None,
+    }
+    monitor.ingest(base)
+    same = dict(base)
+    status = monitor.ingest(same)
+    assert status["drift_score"] < 0.40
+    assert not status["halt"]
+
+
+def test_semantic_drift_detected():
+    from session_drift_monitor import SessionDriftMonitor, DriftType
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "base", "_error": None,
+    })
+    status = monitor.ingest({
+        "action": "persist", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "drift", "_error": None,
+    })
+    types = [s["type"] for s in status["signals"]]
+    assert DriftType.SEMANTIC_DRIFT.value in types
+
+
+def test_noise_violation_detected():
+    from session_drift_monitor import SessionDriftMonitor, DriftType
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "base", "_error": None,
+    })
+    status = monitor.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "aggressive", "rationale": "loud", "_error": None,
+    })
+    types = [s["type"] for s in status["signals"]]
+    assert DriftType.NOISE_VIOLATION.value in types
+
+
+def test_scope_creep_detected():
+    from session_drift_monitor import SessionDriftMonitor, DriftType
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": ["user_profiles"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "base", "_error": None,
+    })
+    status = monitor.ingest({
+        "action": "exfil",
+        "targets": ["user_profiles", "credentials", "ssh_keys", "documents"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "expanded", "_error": None,
+    })
+    types = [s["type"] for s in status["signals"]]
+    assert DriftType.SCOPE_CREEP.value in types
+
+
+def test_parse_failure_signals_high_severity():
+    from session_drift_monitor import SessionDriftMonitor, DriftType
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": [],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "base", "_error": None,
+    })
+    status = monitor.ingest({
+        "action": None, "targets": [],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "",
+        "_error": "JSON parse failed: ...",
+    })
+    types = [s["type"] for s in status["signals"]]
+    assert DriftType.PARSE_FAILURE.value in types
+    parse_sig = next(s for s in status["signals"]
+                     if s["type"] == DriftType.PARSE_FAILURE.value)
+    assert parse_sig["severity"] >= 0.7
+
+
+def test_drift_score_caps_at_1():
+    from session_drift_monitor import SessionDriftMonitor
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent", "rationale": "base", "_error": None,
+    })
+    for _ in range(10):
+        monitor.ingest({
+            "action": "persist",
+            "targets": ["everything", "credentials", "ssh_keys", "documents",
+                        "domain_controller", "network"],
+            "schedule": None, "priority": "high",
+            "noise": "aggressive", "rationale": "",
+            "_error": "JSON parse failed",
+        })
+    assert monitor.drift_score <= 1.0
+
+
+def test_monitor_reset_clears_state():
+    from session_drift_monitor import SessionDriftMonitor
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "base", "_error": None,
+    })
+    monitor.reset()
+    assert monitor.baseline is None
+    assert monitor.drift_score == 0.0
+    assert monitor.action_count == 0
+
+
+def test_report_structure():
+    from session_drift_monitor import SessionDriftMonitor
+    monitor = SessionDriftMonitor()
+    monitor.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "base", "_error": None,
+    })
+    report = monitor.report()
+    for key in ("session_actions", "drift_score", "status",
+                "total_signals", "signal_breakdown", "baseline"):
+        assert key in report
+    assert report["status"] in ("NOMINAL", "WARN", "HALT")
