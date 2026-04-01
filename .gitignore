@@ -20,3 +20,4 @@ backup_*/
 *.bak
 *.orig
 agent_id.txt
+!.env.example
