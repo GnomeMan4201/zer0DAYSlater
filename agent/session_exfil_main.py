@@ -1,4 +1,4 @@
-from agent_core import run_agent_loop
+from agent.agent_core import run_agent_loop
 
 from evasion_win import apply_evasion
 

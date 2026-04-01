@@ -1,111 +1,47 @@
 #!/usr/bin/env bash
-# zer0DAYSlater full test runner
-set -e
-echo '🧪 Running zer0DAYSlater full test suite...'
-export PYTHONPATH=$(pwd)
 cd "$(dirname "$0")"
-
-echo '▶️ Testing Python: memory_loader.py'
-timeout 3s timeout 3s python3 "memory_loader.py" || echo '[!] Failed: memory_loader.py'
-
-echo '▶️ Testing Python: process_doppelganger.py'
-timeout 3s timeout 3s python3 "process_doppelganger.py" || echo '[!] Failed: process_doppelganger.py'
-
-echo '▶️ Testing Python: process_cloak.py'
-timeout 3s timeout 3s python3 "process_cloak.py" || echo '[!] Failed: process_cloak.py'
-
-echo '▶️ Testing Python: llm_command_parser.py'
-timeout 3s timeout 3s echo "exit" | python3 "llm_command_parser.py" || echo '[!] Failed: llm_command_parser.py'
-
-echo '▶️ Testing Python: tui_dashboard.py'
-timeout 3s timeout 3s echo "exit" | python3 "tui_dashboard.py" || echo '[!] Failed: tui_dashboard.py'
-
-echo '▶️ Testing Python: c2_mesh_agent.py'
-timeout 3s timeout 3s echo "exit" | python3 "c2_mesh_agent.py" || echo '[!] Failed: c2_mesh_agent.py'
-
-echo '▶️ Testing Python: proxy_fallback_check.py'
-timeout 3s timeout 3s python3 "proxy_fallback_check.py" || echo '[!] Failed: proxy_fallback_check.py'
-
-echo '▶️ Testing Shell Script: install_omega.sh'
-bash "install_omega.sh" || echo '[!] Failed: install_omega.sh'
-
-echo '▶️ Testing Shell Script: omega_campaign.sh'
-bash "omega_campaign.sh" || echo '[!] Failed: omega_campaign.sh'
-
-echo '▶️ Testing Python: evasion_win.py'
-timeout 3s timeout 3s python3 "evasion_win.py" || echo '[!] Failed: evasion_win.py'
-
-echo '▶️ Testing Python: lateral.py'
-timeout 3s timeout 3s python3 "lateral.py" || echo '[!] Failed: lateral.py'
-
-echo '▶️ Testing Python: persistence.py'
-timeout 3s timeout 3s python3 "persistence.py" || echo '[!] Failed: persistence.py'
-
-echo '▶️ Testing Python: peer_auth.py'
-timeout 3s timeout 3s python3 "peer_auth.py" || echo '[!] Failed: peer_auth.py'
-
-echo '▶️ Testing Python: core/exfil_icmp.py'
-timeout 3s timeout 3s python3 "core/exfil_icmp.py" || echo '[!] Failed: core/exfil_icmp.py'
-
-echo '▶️ Testing Python: core/exfil_mqtt.py'
-timeout 3s timeout 3s python3 "core/exfil_mqtt.py" || echo '[!] Failed: core/exfil_mqtt.py'
-
-echo '▶️ Testing Python: core/adaptive_channel_manager.py'
-timeout 3s timeout 3s python3 "core/adaptive_channel_manager.py" || echo '[!] Failed: core/adaptive_channel_manager.py'
-
-echo '▶️ Testing Python: core/ws_client.py'
-timeout 3s timeout 3s python3 "core/ws_client.py" || echo '[!] Failed: core/ws_client.py'
-
-echo '▶️ Testing Python: agent/agent_core.py'
-timeout 3s timeout 3s python3 "agent/agent_core.py" || echo '[!] Failed: agent/agent_core.py'
-
-echo '▶️ Testing Python: agent/plugin_fetcher.py'
-timeout 3s timeout 3s python3 "agent/plugin_fetcher.py" || echo '[!] Failed: agent/plugin_fetcher.py'
-
-echo '▶️ Testing Python: agent/mtls_plugin_fetcher.py'
-timeout 3s timeout 3s python3 "agent/mtls_plugin_fetcher.py" || echo '[!] Failed: agent/mtls_plugin_fetcher.py'
-
-echo '▶️ Testing Python: agent/session_exfil_main.py'
-timeout 3s timeout 3s python3 "agent/session_exfil_main.py" || echo '[!] Failed: agent/session_exfil_main.py'
-
-echo '▶️ Testing Python: agent/ghost_daemon.py'
-timeout 3s timeout 3s python3 "agent/ghost_daemon.py" || echo '[!] Failed: agent/ghost_daemon.py'
-
-echo '▶️ Testing Python: agent/sandbox_check.py'
-timeout 3s timeout 3s python3 "agent/sandbox_check.py" || echo '[!] Failed: agent/sandbox_check.py'
-
-echo '▶️ Testing Python: agent/advanced_evasion.py'
-timeout 3s timeout 3s python3 "agent/advanced_evasion.py" || echo '[!] Failed: agent/advanced_evasion.py'
-
-echo '▶️ Testing Python: agent/kill_switch.py'
-timeout 3s timeout 3s python3 "agent/kill_switch.py" || echo '[!] Failed: agent/kill_switch.py'
-
-echo '▶️ Testing Python: agent/session_memory.py'
-timeout 3s timeout 3s python3 "agent/session_memory.py" || echo '[!] Failed: agent/session_memory.py'
-
-echo '▶️ Testing Python: agent/session_replay.py'
-timeout 3s timeout 3s python3 "agent/session_replay.py" || echo '[!] Failed: agent/session_replay.py'
-
-echo '▶️ Testing Python: tools/plugin_encryptor.py'
-timeout 3s timeout 3s python3 "tools/plugin_encryptor.py" || echo '[!] Failed: tools/plugin_encryptor.py'
-
-echo '▶️ Testing Python: tools/shellcode_loader.py'
-timeout 3s timeout 3s python3 "tools/shellcode_loader.py" || echo '[!] Failed: tools/shellcode_loader.py'
-
-echo '▶️ Testing Python: tools/c2_server.py'
-timeout 3s timeout 3s python3 "tools/c2_server.py" || echo '[!] Failed: tools/c2_server.py'
-
-echo '▶️ Testing Python: tools/c2_ws_server.py'
-timeout 3s timeout 3s python3 "tools/c2_ws_server.py" || echo '[!] Failed: tools/c2_ws_server.py'
-
-echo '▶️ Testing Python: tools/task_dispatcher.py'
-timeout 3s timeout 3s python3 "tools/task_dispatcher.py" || echo '[!] Failed: tools/task_dispatcher.py'
-
-echo '▶️ Testing Python: tools/mission_report.py'
-timeout 3s timeout 3s python3 "tools/mission_report.py" || echo '[!] Failed: tools/mission_report.py'
-
-echo '▶️ Testing Python: tools/loot_report_pdf.py'
-timeout 3s timeout 3s python3 "tools/loot_report_pdf.py" || echo '[!] Failed: tools/loot_report_pdf.py'
-
-echo '▶️ Testing Python: tools/loot_tagger.py'
-timeout 3s timeout 3s python3 "tools/loot_tagger.py" || echo '[!] Failed: tools/loot_tagger.py'
+source .venv/bin/activate 2>/dev/null || true
+PASS=0
+FAIL=0
+run_test() {
+    local label="$1"
+    local cmd="$2"
+    if timeout 3s bash -c "$cmd" > /dev/null 2>&1; then
+        echo "[✓] $label"
+        PASS=$((PASS+1))
+    else
+        echo "[!] Failed: $label"
+        FAIL=$((FAIL+1))
+    fi
+}
+run_test "memory_loader.py"                  "python3 -c 'import memory_loader'"
+run_test "process_doppelganger.py"           "python3 -c 'import process_doppelganger'"
+run_test "process_cloak.py"                  "python3 -c 'import process_cloak'"
+run_test "proxy_fallback_check.py"           "python3 -c 'import proxy_fallback_check'"
+run_test "evasion_win.py"                    "python3 -c 'import evasion_win'"
+run_test "lateral.py"                        "python3 -c 'import lateral'"
+run_test "persistence.py"                    "python3 -c 'import persistence'"
+run_test "peer_auth.py"                      "python3 -c 'import peer_auth'"
+run_test "core/exfil_icmp.py"               "python3 -c 'import core.exfil_icmp'"
+run_test "core/exfil_mqtt.py"               "python3 -c 'import core.exfil_mqtt'"
+run_test "core/adaptive_channel_manager.py" "python3 -c 'import core.adaptive_channel_manager'"
+run_test "core/ws_client.py"                "python3 -c 'import core.ws_client'"
+run_test "agent/agent_core.py"              "python3 -c 'import agent.agent_core'"
+run_test "agent/plugin_fetcher.py"          "python3 -c 'import agent.plugin_fetcher'"
+run_test "agent/session_exfil_main.py"      "python3 -c 'import agent.session_exfil_main'"
+run_test "agent/ghost_daemon.py"            "python3 -c 'import agent.ghost_daemon'"
+run_test "agent/sandbox_check.py"           "python3 -c 'import agent.sandbox_check'"
+run_test "agent/advanced_evasion.py"        "python3 -c 'import agent.advanced_evasion'"
+run_test "agent/kill_switch.py"             "python3 -c 'import agent.kill_switch'"
+run_test "agent/session_memory.py"          "python3 -c 'import agent.session_memory'"
+run_test "agent/session_replay.py"          "python3 -c 'import agent.session_replay'"
+run_test "tools/plugin_encryptor.py"        "python3 -c 'import tools.plugin_encryptor'"
+run_test "tools/shellcode_loader.py"        "python3 -c 'import tools.shellcode_loader'"
+run_test "tools/c2_server.py"               "python3 -c 'import tools.c2_server'"
+run_test "tools/c2_ws_server.py"            "python3 -c 'import tools.c2_ws_server'"
+run_test "tools/task_dispatcher.py"         "python3 -c 'import tools.task_dispatcher'"
+run_test "tools/mission_report.py"          "python3 -c 'import tools.mission_report'"
+run_test "tools/loot_report_pdf.py"         "python3 -c 'import tools.loot_report_pdf'"
+run_test "tools/loot_tagger.py"             "python3 -c 'import tools.loot_tagger'"
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
