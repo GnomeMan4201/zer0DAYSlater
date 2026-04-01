@@ -30,5 +30,5 @@ if [ "$MISSING" -eq 1 ]; then
 fi
 
 echo "[✓] Environment validated"
-echo "[*] Starting TUI dashboard..."
-python3 tui_dashboard.py
+echo "[*] Starting operator console..."
+python3 llm_operator.py
