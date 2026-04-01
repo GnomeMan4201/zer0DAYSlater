@@ -19,3 +19,4 @@ tmp/
 backup_*/
 *.bak
 *.orig
+agent_id.txt

