@@ -252,41 +252,11 @@ zer0DAYSlater/
 
 ---
 
-## Install
-```bash
-git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
-cd zer0DAYSlater
-./install_omega.sh
-```
-
-Requires [Ollama](https://ollama.ai) with a local model:
-```bash
-ollama pull mistral
-```
-
-Configure before use:
-```bash
-export ZDS_AUTH_TOKEN=your_token
-export ZDS_C2_WS_URL=wss://your-c2-server:8765
-export ZDS_HTTPS_ENDPOINT=https://your-c2-server/api
-export ZDS_PLUGIN_SERVER=https://your-c2-server
-export ZDS_CONTROL_DOMAIN=your.c2.domain
-export ZDS_PEERS=192.168.x.x,192.168.x.y
-export ZDS_LLM_MODEL=mistral:latest   # or llama3.1, phi3, etc.
-```
-
-Run:
-```bash
-source .venv/bin/activate
-./omega_campaign.sh
-```
-
----
-
 ## Tests
 ```bash
 source .venv/bin/activate
-python3 -m pytest tests/ -v
+python3 -m pytest tests/ -v      # unit tests
+./scripts/smoke.sh               # runtime smoke checks
 # 56 passed
 ```
 
