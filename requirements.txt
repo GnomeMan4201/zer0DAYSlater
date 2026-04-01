@@ -1,9 +1,9 @@
-
 requests
 pycryptodome
 websockets
-fpdf
+fpdf2
 fastapi
 uvicorn
-pynacl
+PyNaCl
 ollama
+pytest
