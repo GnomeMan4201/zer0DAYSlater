@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 ZDS_ROOT = Path(__file__).parent
+# OWN_ROOT: optional sibling-repo workspace path (LANimals/OWN phase modules).
+# Not required for standalone zer0DAYSlater operation; sys.path insert is a no-op if absent.
 OWN_ROOT = ZDS_ROOT.parent / "OWN" / "OWN_PACKAGE" / "phases"
 sys.path.insert(0, str(ZDS_ROOT))
 sys.path.insert(0, str(OWN_ROOT))
