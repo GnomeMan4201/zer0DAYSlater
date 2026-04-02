@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 source .venv/bin/activate
+
+# Load environment
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
 clear
 echo -e "\033[92m"
 echo "███████╗███████╗██████╗  █████╗ ██████╗  █████╗ ██╗   ██╗"
