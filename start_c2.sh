@@ -3,6 +3,8 @@ cd "$(dirname "$0")"
 source .venv/bin/activate
 set -a; source .env; set +a
 
+echo "[*] Discovering LAN peers..."
+python3 lan_discover.py
 echo "[*] Starting C2 listeners..."
 
 uvicorn tools.c2_server:app \
