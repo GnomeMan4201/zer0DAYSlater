@@ -21,3 +21,9 @@ backup_*/
 *.orig
 agent_id.txt
 !.env.example
+loot_log.json
+session_key.bin
+session_memory.json
+key.pem
+cert.pem
+.env
