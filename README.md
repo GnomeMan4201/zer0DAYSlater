@@ -2,6 +2,9 @@
 
 > Operator-controlled post-exploitation research framework with adaptive C2, evasion instrumentation, and LLM-driven session analysis.
 
+[![CI](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml)
+
+
 ![zer0DAYSlater Logo](https://github.com/GnomeMan4201/zer0DAYSlater/raw/main/assets/zer0DAYSlater_logo.jpg)
 
 ---
