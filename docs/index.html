@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aliasOS — bad_banana operator profile manager</title>
+<meta name="description" content="A Textual TUI for managing operator shell aliases. Browse, CRUD, health check, history mine, gap analysis.">
+<meta property="og:title" content="aliasOS">
+<meta property="og:description" content="A Textual TUI for managing 300+ shell aliases. Built by GnomeMan4201 / badBANANA.">
+<meta property="og:type" content="website">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1a1a1a;
+  --border: #2a2a2a;
+  --accent: #4ec9b0;
+  --accent2: #c89b6e;
+  --text: #c8c8c8;
+  --muted: #555;
+  --red: #e05555;
+  --green: #3a9a3a;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', monospace; font-size: 14px; line-height: 1.7; }
+
+/* NAV */
+nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(10,10,10,0.95); backdrop-filter: blur(8px); z-index: 100; }
+.nav-brand { color: var(--accent); font-weight: bold; font-size: 15px; letter-spacing: 0.05em; text-decoration: none; }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--muted); text-decoration: none; font-size: 12px; transition: color 0.15s; }
+.nav-links a:hover { color: var(--accent); }
+
+/* HERO */
+.hero { padding: 80px 40px 60px; max-width: 960px; margin: 0 auto; }
+.hero-tag { color: var(--accent2); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px; }
+h1 { font-size: 42px; font-weight: bold; color: #fff; line-height: 1.15; margin-bottom: 16px; }
+h1 span { color: var(--accent); }
+.hero-sub { color: var(--muted); font-size: 14px; max-width: 540px; margin-bottom: 32px; line-height: 1.8; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-primary { padding: 10px 20px; background: var(--accent); color: #0a0a0a; font-family: inherit; font-size: 12px; font-weight: bold; border: none; cursor: pointer; text-decoration: none; letter-spacing: 0.05em; display: inline-block; }
+.btn-secondary { padding: 10px 20px; background: transparent; color: var(--accent); font-family: inherit; font-size: 12px; border: 1px solid var(--accent); cursor: pointer; text-decoration: none; display: inline-block; }
+.btn-primary:hover { background: #3ab89e; }
+.btn-secondary:hover { background: rgba(78,201,176,0.08); }
+
+/* STATS */
+.stats { display: flex; gap: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 0 60px; }
+.stat { flex: 1; padding: 20px 40px; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: none; }
+.stat-n { font-size: 28px; font-weight: bold; color: var(--accent); display: block; }
+.stat-l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* DEMO SECTION */
+.demo-section { padding: 0 40px 80px; max-width: 960px; margin: 0 auto; }
+.section-label { font-size: 11px; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px; }
+.section-title { font-size: 22px; color: #fff; margin-bottom: 8px; }
+.section-sub { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+
+/* TERMINAL DEMO */
+#demo { font-size: 11.5px; background: #111; border-radius: 6px; overflow: hidden; width: 100%; border: 1px solid var(--border); box-shadow: 0 24px 80px rgba(0,0,0,0.7); position: relative; }
+#titlebar { background: #1e1e1e; padding: 8px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.dot-r{background:#ff5f57}.dot-y{background:#ffbd2e}.dot-g{background:#28c841}
+#app-title { color: var(--accent); font-weight: bold; margin: 0 auto; font-size: 11px; letter-spacing: 0.08em; }
+#d-header { background: #091e28; color: var(--accent); padding: 5px 12px; font-size: 10px; font-weight: bold; text-align: center; letter-spacing: 0.12em; border-bottom: 1px solid #1a3a4a; }
+#d-tabs { background: #111; display: flex; border-bottom: 1px solid var(--border); }
+.dtab { padding: 5px 13px; color: var(--muted); font-size: 10px; cursor: pointer; border-bottom: 2px solid transparent; }
+.dtab.active { color: var(--accent); border-bottom-color: var(--accent); background: #161616; }
+#d-content { height: 320px; display: flex; overflow: hidden; position: relative; }
+#d-sidebar { width: 130px; background: #0e0e0e; border-right: 1px solid #1a1a1a; overflow-y: auto; flex-shrink: 0; }
+.dcat { padding: 3px 8px; font-size: 10px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.dcat.active { background: #112030; color: var(--accent); }
+#d-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+#d-search { background: #161616; border: none; border-bottom: 1px solid #1a1a1a; color: var(--text); padding: 5px 8px; font-family: inherit; font-size: 10px; width: 100%; outline: none; }
+#d-table-wrap { flex: 1; overflow-y: auto; }
+dtable { width: 100%; border-collapse: collapse; font-size: 10px; }
+table.dt { width: 100%; border-collapse: collapse; font-size: 10px; }
+table.dt th { background: #161616; color: #444; padding: 3px 7px; text-align: left; font-weight: normal; position: sticky; top: 0; border-bottom: 1px solid #1a1a1a; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
+table.dt tr.drow:hover td { background: #161616; }
+table.dt tr.drow.dsel td { background: #112030; }
+table.dt td { padding: 2px 7px; color: #999; border-bottom: 1px solid #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+table.dt td.dan { color: var(--accent); font-weight: bold; }
+table.dt td.dac { color: var(--accent2); }
+table.dt td.das { color: #333; font-size: 9px; }
+#d-detail { background: #0a0a0a; border-top: 1px solid #1a1a1a; padding: 5px 8px; font-size: 10px; color: #333; min-height: 44px; line-height: 1.6; }
+#d-detail .ddn { color: var(--accent); font-weight: bold; }
+#d-detail .ddc { color: #aaa; }
+#d-actions { display: flex; justify-content: flex-end; gap: 5px; padding: 4px 7px; background: #0e0e0e; border-top: 1px solid #1a1a1a; }
+.dbtn { padding: 2px 8px; font-size: 9px; font-family: inherit; border: 1px solid #222; background: #161616; color: #666; cursor: pointer; }
+.dbtn.dp { background: #091e28; border-color: #2a6a7a; color: var(--accent); }
+.dbtn.dd { background: #1a0808; border-color: #4a1818; color: var(--red); }
+
+/* shell */
+#d-tab-shell { display: none; flex-direction: column; width: 100%; height: 100%; background: #080808; }
+#d-shell-log { flex: 1; padding: 7px 10px; overflow-y: auto; font-size: 10px; line-height: 1.8; }
+.dsl { color: #999; } .dsp { color: var(--accent); font-weight: bold; } .dso { color: #444; } .dse { color: var(--red); }
+#d-shell-bottom { display: flex; align-items: center; gap: 7px; padding: 5px 10px; background: #0e0e0e; border-top: 1px solid #1a1a1a; }
+#d-shell-in { flex: 1; background: transparent; border: none; color: #fff; font-family: inherit; font-size: 10px; outline: none; }
+
+/* gap */
+#d-tab-gaps { display: none; flex-direction: column; width: 100%; height: 100%; }
+#d-gap-hdr { padding: 5px 8px; background: #0e0e0e; border-bottom: 1px solid #1a1a1a; font-size: 10px; color: #444; display: flex; gap: 8px; }
+#d-gap-scroll { flex: 1; overflow-y: auto; }
+.dgrow { display: grid; grid-template-columns: 62px 88px 95px 1fr; padding: 2px 7px; border-bottom: 1px solid #111; font-size: 10px; cursor: pointer; gap: 4px; }
+.dgrow:hover { background: #111; }
+.dgrow.dgsel { background: #112030; }
+.dgrow.dghdr { background: #161616; color: #333; font-size: 9px; text-transform: uppercase; cursor: default; }
+.dgrow.dgdone .dgp,.dgrow.dgdone .dga,.dgrow.dgdone .dgcmd { color: #1a3a1a; }
+.dgp.h { color: var(--red); } .dgp.m { color: var(--accent2); }
+.dga { color: var(--accent); font-weight: bold; } .dgcmd { color: #666; } .dgcat { color: var(--accent2); }
+#d-gap-foot { padding: 4px 7px; background: #0e0e0e; border-top: 1px solid #1a1a1a; display: flex; justify-content: flex-end; }
+.dapply { padding: 2px 10px; font-size: 10px; font-family: inherit; background: #0f1f07; border: 1px solid #3a5a1a; color: #7aba4a; cursor: pointer; }
+
+/* health */
+#d-tab-health { display: none; flex-direction: column; width: 100%; height: 100%; }
+#d-health-sum { padding: 5px 8px; background: #0e0e0e; border-bottom: 1px solid #1a1a1a; font-size: 10px; }
+#d-health-scroll { flex: 1; overflow-y: auto; }
+.dhrow { display: grid; grid-template-columns: 80px 100px 150px 1fr; padding: 2px 7px; border-bottom: 1px solid #111; font-size: 10px; gap: 4px; }
+.dhrow.dhhdr { background: #161616; color: #333; font-size: 9px; text-transform: uppercase; }
+.dhst.ok { color: var(--green); } .dhst.dead { color: var(--red); font-weight: bold; } .dhst.shadow { color: var(--accent2); }
+.dhn { color: var(--accent); } .dhc { color: #444; font-size: 9px; } .dhi { color: var(--accent2); font-size: 9px; }
+
+#d-footer { background: #091e28; padding: 3px 10px; display: flex; gap: 14px; font-size: 9px; color: var(--accent); flex-wrap: wrap; }
+.dfk { color: #fff; font-weight: bold; margin-right: 1px; }
+#d-notif { position: absolute; bottom: 36px; right: 10px; background: #091e28; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; font-size: 10px; border-radius: 3px; opacity: 0; transition: opacity 0.25s; pointer-events: none; z-index: 10; }
+#d-notif.show { opacity: 1; }
+#d-progress { position: absolute; top: 0; left: 0; height: 2px; background: var(--accent); width: 0%; transition: width 0.5s linear; opacity: 0.5; }
+
+/* FEATURES */
+.features { padding: 0 40px 80px; max-width: 960px; margin: 0 auto; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 32px; }
+.feature { background: var(--surface); padding: 24px; }
+.feature-icon { color: var(--accent); font-size: 18px; margin-bottom: 12px; display: block; }
+.feature-title { color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+.feature-desc { color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+/* INSTALL */
+.install { padding: 0 40px 80px; max-width: 960px; margin: 0 auto; }
+.code-block { background: var(--surface); border: 1px solid var(--border); padding: 20px 24px; margin-top: 16px; position: relative; overflow-x: auto; }
+.code-block pre { color: var(--text); font-size: 12px; line-height: 1.8; white-space: pre; }
+.code-block .cm { color: var(--muted); }
+.code-block .ck { color: var(--accent); }
+.code-block .cv { color: var(--accent2); }
+.copy-btn { position: absolute; top: 8px; right: 8px; padding: 3px 8px; font-size: 10px; font-family: inherit; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; }
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* KEYBINDINGS */
+.keybindings { padding: 0 40px 80px; max-width: 960px; margin: 0 auto; }
+.kb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 24px; }
+.kb-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); }
+.kb-key { background: var(--surface2); border: 1px solid var(--border); color: var(--accent); padding: 2px 7px; font-size: 11px; min-width: 44px; text-align: center; flex-shrink: 0; }
+.kb-desc { font-size: 11px; color: var(--muted); }
+
+/* FOOTER */
+footer { border-top: 1px solid var(--border); padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap; }
+.footer-brand { color: var(--muted); font-size: 11px; }
+.footer-brand span { color: var(--accent2); }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { color: var(--muted); text-decoration: none; font-size: 11px; }
+.footer-links a:hover { color: var(--accent); }
+
+@media (max-width: 640px) {
+  nav, .hero, .demo-section, .features, .install, .keybindings { padding-left: 20px; padding-right: 20px; }
+  h1 { font-size: 28px; }
+  .stats { flex-direction: column; }
+  .stat { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="#">aliasOS</a>
+  <div class="nav-links">
+    <a href="#demo-section">demo</a>
+    <a href="#features">features</a>
+    <a href="#install">install</a>
+    <a href="https://github.com/GnomeMan4201/aliasOS" target="_blank">github</a>
+    <a href="https://dev.to/gnomeman4201" target="_blank">dev.to</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">badBANANA research // GnomeMan4201</div>
+  <h1>manage your <span>operator shell</span><br>like a professional</h1>
+  <p class="hero-sub">A Textual TUI for navigating, auditing, and extending your alias ecosystem. Built for shells with 100+ aliases and the discipline to keep them organized.</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#install">install</a>
+    <a class="btn-secondary" href="https://github.com/GnomeMan4201/aliasOS" target="_blank">view on github</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-n">7</span><span class="stat-l">tabs</span></div>
+  <div class="stat"><span class="stat-n">296</span><span class="stat-l">aliases managed</span></div>
+  <div class="stat"><span class="stat-n">155</span><span class="stat-l">gap suggestions</span></div>
+  <div class="stat"><span class="stat-n">0</span><span class="stat-l">external dependencies</span></div>
+</div>
+
+<div class="demo-section" id="demo-section">
+  <div class="section-label">live demo</div>
+  <div class="section-title">see it in action</div>
+  <div class="section-sub">self-playing — browse aliases, run commands, apply gap suggestions, inspect health</div>
+
+  <div id="demo">
+    <div id="d-progress"></div>
+    <div id="titlebar"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span id="app-title">aliasOS — bad_banana operator profile</span></div>
+    <div id="d-header">aliasOS — bad_banana operator profile</div>
+    <div id="d-tabs">
+      <div class="dtab active" data-tab="aliases">aliases [1]</div>
+      <div class="dtab" data-tab="shell">shell [3]</div>
+      <div class="dtab" data-tab="gaps">gap analysis [4]</div>
+      <div class="dtab" data-tab="health">health [5]</div>
+    </div>
+    <div id="d-content">
+      <div id="d-tab-aliases" style="display:flex;width:100%;height:100%">
+        <div id="d-sidebar">
+          <div class="dcat active" data-cat="all">all</div>
+          <div class="dcat" data-cat="ai/llm">ai/llm (9)</div>
+          <div class="dcat" data-cat="docker">docker (14)</div>
+          <div class="dcat" data-cat="drift">drift (8)</div>
+          <div class="dcat" data-cat="git">git (30)</div>
+          <div class="dcat" data-cat="network">network (27)</div>
+          <div class="dcat" data-cat="osint">osint (25)</div>
+          <div class="dcat" data-cat="system">system (36)</div>
+        </div>
+        <div id="d-main">
+          <input id="d-search" placeholder="search aliases..." readonly>
+          <div id="d-table-wrap">
+            <table class="dt"><thead><tr><th>alias</th><th>command</th><th>category</th><th>source</th></tr></thead>
+            <tbody id="d-atbody"></tbody></table>
+          </div>
+          <div id="d-actions"><button class="dbtn dp">+ new</button><button class="dbtn">edit</button><button class="dbtn dd">delete</button></div>
+          <div id="d-detail"><span style="color:#222">select an alias — enter or double-click to run in shell</span></div>
+        </div>
+      </div>
+      <div id="d-tab-shell" style="display:none">
+        <div id="d-shell-log"><div class="dsl"><span class="dsp">aliasOS shell</span> — sourcing 49 alias files</div><div class="dso" style="margin-bottom:4px">tip: up/down for history | enter to execute</div></div>
+        <div id="d-shell-bottom"><span class="dsp">❯</span><input id="d-shell-in" placeholder="enter command..." readonly></div>
+      </div>
+      <div id="d-tab-gaps" style="display:none">
+        <div id="d-gap-hdr">priority: <span style="color:var(--accent)">all</span> &nbsp;·&nbsp; <span id="d-gap-count" style="color:#444">18 suggestions</span></div>
+        <div id="d-gap-scroll"><div class="dgrow dghdr"><span>priority</span><span>category</span><span>alias</span><span>command</span></div><div id="d-gtbody"></div></div>
+        <div id="d-gap-foot"><button class="dapply">apply suggestion</button></div>
+      </div>
+      <div id="d-tab-health" style="display:none">
+        <div id="d-health-sum">— aliases checked</div>
+        <div id="d-health-scroll"><div class="dhrow dhhdr"><span>status</span><span>alias</span><span>command</span><span>issue</span></div><div id="d-htbody"></div></div>
+      </div>
+    </div>
+    <div id="d-footer">
+      <span><span class="dfk">^q</span>quit</span><span><span class="dfk">^r</span>reload</span>
+      <span><span class="dfk">1</span>aliases</span><span><span class="dfk">3</span>shell</span>
+      <span><span class="dfk">4</span>gaps</span><span><span class="dfk">5</span>health</span>
+      <span><span class="dfk">n</span>new alias</span><span><span class="dfk">^e</span>export</span>
+    </div>
+    <div id="d-notif"></div>
+  </div>
+</div>
+
+<div class="features" id="features">
+  <div class="section-label">capabilities</div>
+  <div class="section-title">everything your alias ecosystem needs</div>
+  <div class="features-grid">
+    <div class="feature"><span class="feature-icon">▤</span><div class="feature-title">alias browser</div><div class="feature-desc">Browse all aliases by category with live search. See source file, line number, and command at a glance. Enter or double-click any row to run it in the shell tab.</div></div>
+    <div class="feature"><span class="feature-icon">◈</span><div class="feature-title">ecosystem map</div><div class="feature-desc">BANANA_TREE layer visualization — OBSERVE, SIMULATE, EXECUTE, ADAPT. Click any tool to probe live status and see registered aliases and root paths.</div></div>
+    <div class="feature"><span class="feature-icon">❯</span><div class="feature-title">live shell</div><div class="feature-desc">Integrated shell that sources your full alias set before executing. Command history, streamed output, clear button. Run aliases without leaving the TUI.</div></div>
+    <div class="feature"><span class="feature-icon">◎</span><div class="feature-title">gap analysis</div><div class="feature-desc">155 curated missing aliases across 22 domains — Docker, testing, linting, Ollama, drift, SSH/GPG, tmux, and more. One-click apply writes directly to your alias files.</div></div>
+    <div class="feature"><span class="feature-icon">✗</span><div class="feature-title">health checker</div><div class="feature-desc">Scans every alias for dead commands, shadowed names, and self-referential loops. Color-coded by severity. Runs on tab open, re-run anytime.</div></div>
+    <div class="feature"><span class="feature-icon">◉</span><div class="feature-title">history miner</div><div class="feature-desc">Parses ~/.bash_history to surface frequent unaliased commands. Shows count and suggested alias name. One click to promote any command into a permanent alias.</div></div>
+    <div class="feature"><span class="feature-icon">⌥</span><div class="feature-title">git context</div><div class="feature-desc">Detects the current repo, shows branch and remote, loads per-repo alias overrides. Create repo-scoped aliases that activate on cd.</div></div>
+    <div class="feature"><span class="feature-icon">◆</span><div class="feature-title">full crud</div><div class="feature-desc">New, edit, delete aliases with file picker and ctrl+s to save. Writes back to the source .sh file in place. ctrl+e exports all aliases to a single clean file.</div></div>
+  </div>
+</div>
+
+<div class="install" id="install">
+  <div class="section-label">getting started</div>
+  <div class="section-title">install</div>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+    <pre><span class="cm"># requirements: python 3.10+</span>
+<span class="ck">pip install</span> <span class="cv">textual</span>
+
+<span class="cm"># clone and run</span>
+<span class="ck">git clone</span> https://github.com/GnomeMan4201/aliasOS.git
+<span class="ck">cd</span> aliasOS
+<span class="ck">python3</span> aliasOS_tui.py</pre>
+  </div>
+
+  <div style="margin-top:24px">
+    <div class="section-title" style="font-size:16px;margin-bottom:8px">alias modules</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Nine alias modules covering 378 aliases + functions. Install individually or all at once:</p>
+  </div>
+  <div class="code-block">
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+    <pre><span class="cm"># copy modules to your ~/.aliases.d/</span>
+<span class="ck">cp</span> aliases/*.sh ~/.aliases.d/
+
+<span class="cm"># reload</span>
+<span class="ck">source</span> ~/.aliases.d/loader.sh</pre>
+  </div>
+</div>
+
+<div class="keybindings" id="keybindings">
+  <div class="section-label">keybindings</div>
+  <div class="section-title">keyboard reference</div>
+  <div class="kb-grid">
+    <div class="kb-item"><span class="kb-key">1–7</span><span class="kb-desc">switch tabs</span></div>
+    <div class="kb-item"><span class="kb-key">n</span><span class="kb-desc">new alias</span></div>
+    <div class="kb-item"><span class="kb-key">enter</span><span class="kb-desc">run alias in shell</span></div>
+    <div class="kb-item"><span class="kb-key">^r</span><span class="kb-desc">reload aliases</span></div>
+    <div class="kb-item"><span class="kb-key">^e</span><span class="kb-desc">export all aliases</span></div>
+    <div class="kb-item"><span class="kb-key">^s</span><span class="kb-desc">save in edit modal</span></div>
+    <div class="kb-item"><span class="kb-key">^p</span><span class="kb-desc">command palette</span></div>
+    <div class="kb-item"><span class="kb-key">^q</span><span class="kb-desc">quit</span></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-brand">aliasOS — built by <span>GnomeMan4201</span> // <span>badBANANA</span> research</div>
+  <div class="footer-links">
+    <a href="https://github.com/GnomeMan4201/aliasOS" target="_blank">github</a>
+    <a href="https://dev.to/gnomeman4201" target="_blank">dev.to</a>
+    <a href="https://github.com/GnomeMan4201" target="_blank">portfolio</a>
+  </div>
+</footer>
+
+<script>
+const ALIASES = [
+  ["..","cd ..","utility","navigation.sh"],
+  ["aicode","ai_code","ai/llm","ollama.sh"],
+  ["aidiff","ai_diff_explain","ai/llm","ollama.sh"],
+  ["aiosint","ai_osint","ai/llm","ollama.sh"],
+  ["arpscan","arp_scan","network","netops.sh"],
+  ["b64d","base64 -d","crypto","crypto.sh"],
+  ["b64e","base64","crypto","crypto.sh"],
+  ["cov","pytest --cov=. --cov-report=term-missing","dev","python.sh"],
+  ["curlj","curl -s -H Content-Type:json","network","network_advanced.sh"],
+  ["dbash","docker exec -it $1 bash","docker","docker.sh"],
+  ["ddown","docker-compose down","docker","docker.sh"],
+  ["dex","docker exec -it","docker","docker.sh"],
+  ["dlog","docker logs -f","docker","docker.sh"],
+  ["dps","docker ps","docker","docker.sh"],
+  ["driftcd","cd ${DRIFT_ROOT}","drift","drift_extended.sh"],
+  ["driftrpt","drift report","drift","drift_extended.sh"],
+  ["driftsnap","drift snapshot","drift","drift_extended.sh"],
+  ["driftv","drift verify","drift","drift_extended.sh"],
+  ["driftwatch","watch -n 5 drift status","drift","drift_extended.sh"],
+  ["dup","docker-compose up -d","docker","docker.sh"],
+  ["fmt","black .","dev","python.sh"],
+  ["fwstatus","sudo ufw status verbose","network","network_advanced.sh"],
+  ["gfixup","git commit --fixup","git","git_advanced.sh"],
+  ["gp","git push","git","git.sh"],
+  ["greflog","git reflog --date=relative","git","git_advanced.sh"],
+  ["gs","git status -sb","git","git.sh"],
+  ["lint","ruff check .","dev","python.sh"],
+  ["nmap_quick","nmap -T4 -F","network","network_advanced.sh"],
+  ["oadd","osint add","osint","osint.sh"],
+  ["oi","osint","osint","osint.sh"],
+  ["olllist","ollama list","ai/llm","ollama_management.sh"],
+  ["ollrun","ollama run","ai/llm","ollama_management.sh"],
+  ["pt","pytest","dev","python.sh"],
+  ["sha256f","sha256sum","crypto","crypto.sh"],
+  ["tma","tmux attach -t","system","network_advanced.sh"],
+  ["va","source .venv/bin/activate","dev","python.sh"],
+];
+const GAPS = [
+  ["high","Docker","dpsa","docker ps -a",false],
+  ["high","Docker","dlog","docker logs -f",true],
+  ["high","Testing","pt","pytest",false],
+  ["high","Testing","cov","pytest --cov=.",false],
+  ["high","Linting","lint","ruff check .",false],
+  ["high","Drift","driftv","drift verify",false],
+  ["high","Drift","driftsnap","drift snapshot",false],
+  ["high","Python","va","source .venv/bin/activate",false],
+  ["medium","Ollama","ollpull","ollama pull",false],
+  ["medium","Ollama","ollrun","ollama run",false],
+  ["medium","SSH/GPG","sshkeys","ls -la ~/.ssh/",false],
+  ["medium","Firewall","fwstatus","sudo ufw status verbose",false],
+  ["medium","Tmux","tma","tmux attach -t",false],
+  ["medium","Archive","untar","tar -xzvf",false],
+  ["medium","Crypto","b64e","base64",false],
+];
+const HEALTH = [
+  ["ok","driftv","drift verify",""],
+  ["ok","aicode","ai_code",""],
+  ["ok","gp","git push",""],
+  ["dead","ingest","python3 ingest_cli.py","'ingest_cli.py' not in PATH"],
+  ["shadow","ss","sess status","defined in: shellops.sh, system.sh"],
+  ["ok","nmap_quick","nmap -T4 -F",""],
+  ["ok","dps","docker ps",""],
+  ["dead","gpuwatch","gpu_watch","'gpu_watch' not found on PATH"],
+  ["ok","pt","pytest",""],
+  ["ok","lint","ruff check .",""],
+  ["ok","va","source .venv/bin/activate",""],
+  ["dead","chain","chain","'chain' not found on PATH"],
+];
+
+function $i(id){return document.getElementById(id);}
+let curTab="aliases",selRow=-1,selCat="all",selGap=-1;
+const applied=new Set([1]);
+
+function renderA(f="",cat="all"){
+  const rows=ALIASES.filter(a=>(cat==="all"||a[2]===cat)&&(f===""||a[0].includes(f)||a[1].includes(f)||a[2].includes(f)));
+  $i("d-atbody").innerHTML=rows.map((a,i)=>`<tr class="drow${i===selRow?" dsel":""}" onclick="selA(${i})"><td class="dan">${a[0]}</td><td>${a[1].length>36?a[1].slice(0,36)+"…":a[1]}</td><td class="dac">${a[2]}</td><td class="das">${a[3]}</td></tr>`).join("");
+}
+function selA(i){
+  selRow=i;
+  const rows=ALIASES.filter(a=>selCat==="all"||a[2]===selCat);
+  const a=rows[i];
+  if(!a)return;
+  $i("d-detail").innerHTML=`<span class="ddn">${a[0]}</span> = <span class="ddc">${a[1]}</span><br><span style="color:#222;font-size:9px">file: ${a[3]}  cat: ${a[2]}</span>`;
+  document.querySelectorAll("#d-atbody tr").forEach((r,idx)=>r.classList.toggle("dsel",idx===i));
+}
+function renderG(){
+  $i("d-gtbody").innerHTML=GAPS.map((g,i)=>{const d=applied.has(i);return`<div class="dgrow${d?" dgdone":""}${i===selGap?" dgsel":""}" onclick="selG(${i})"><span class="dgp ${d?"":g[0]}">${d?"done":g[0]}</span><span class="dgcat">${g[1]}</span><span class="dga">${g[2]}</span><span class="dgcmd">${g[3]}</span></div>`;}).join("");
+  $i("d-gap-count").textContent=(GAPS.length-applied.size)+" remaining";
+}
+function selG(i){selGap=i;renderG();}
+function renderH(){
+  const dead=HEALTH.filter(h=>h[0]==="dead").length,shadow=HEALTH.filter(h=>h[0]==="shadow").length,ok=HEALTH.filter(h=>h[0]==="ok").length;
+  $i("d-health-sum").innerHTML=`<span style="color:#666">${HEALTH.length} aliases — </span><span style="color:#3a9a3a">${ok} ok</span>  <span style="color:#e05555">${dead} dead</span>  <span style="color:#c89b6e">${shadow} shadowed</span>`;
+  $i("d-htbody").innerHTML=HEALTH.map(h=>`<div class="dhrow"><span class="dhst ${h[0]}">${h[0]==="ok"?"✓ ok":h[0]==="dead"?"✗ dead":"⊕ shadow"}</span><span class="dhn">${h[1]}</span><span class="dhc">${h[2]}</span><span class="dhi">${h[3]||"—"}</span></div>`).join("");
+}
+function swTab(name){
+  curTab=name;
+  document.querySelectorAll(".dtab").forEach(t=>t.classList.toggle("active",t.dataset.tab===name));
+  ["aliases","shell","gaps","health"].forEach(t=>{const el=$i("d-tab-"+t);if(el)el.style.display=t===name?"flex":"none";});
+}
+document.querySelectorAll(".dtab").forEach(t=>t.addEventListener("click",()=>swTab(t.dataset.tab)));
+document.querySelectorAll(".dcat").forEach(c=>c.addEventListener("click",()=>{
+  document.querySelectorAll(".dcat").forEach(x=>x.classList.remove("active"));c.classList.add("active");
+  selCat=c.dataset.cat;selRow=-1;renderA($i("d-search").value,selCat);
+}));
+function notify(msg){const n=$i("d-notif");n.textContent=msg;n.classList.add("show");setTimeout(()=>n.classList.remove("show"),1800);}
+function addSLine(html){const l=$i("d-shell-log"),d=document.createElement("div");d.className="dsl";d.innerHTML=html;l.appendChild(d);l.scrollTop=l.scrollHeight;}
+function typeInto(el,text,cb,speed=55){el.value="";let i=0;const iv=setInterval(()=>{el.value+=text[i++];if(i>=text.length){clearInterval(iv);if(cb)setTimeout(cb,300);}},speed);}
+function typeSearch(text,cb,speed=75){const el=$i("d-search");el.value="";let i=0;const iv=setInterval(()=>{el.value+=text[i++];renderA(el.value,selCat);if(i>=text.length){clearInterval(iv);if(cb)setTimeout(cb,400);}},speed);}
+function clearSearch(cb){const el=$i("d-search"),orig=el.value;let i=orig.length;const iv=setInterval(()=>{el.value=orig.slice(0,--i);renderA(el.value,selCat);if(i<=0){clearInterval(iv);if(cb)setTimeout(cb,200);}},40);}
+
+renderA();renderG();renderH();
+
+const seq=[
+  [()=>selA(0),600],[()=>selA(2),500],[()=>selA(7),500],[()=>selA(13),500],
+  [()=>typeSearch("drift"),1200],[()=>selA(0),500],[()=>selA(2),500],[()=>selA(3),500],
+  [()=>clearSearch(()=>{document.querySelectorAll(".dcat").forEach(c=>c.classList.toggle("active",c.dataset.cat==="docker"));selCat="docker";selRow=-1;renderA("","docker");}),900],
+  [()=>selA(0),500],[()=>selA(2),500],[()=>selA(4),500],
+  [()=>{
+    const a=ALIASES.filter(x=>x[2]==="docker")[4];
+    swTab("shell");
+    setTimeout(()=>{
+      addSLine(`<span class="dsp">❯</span> <span style="color:#fff">${a[1]}</span>`);
+      setTimeout(()=>{addSLine(`<span class="dse">Error: No container name</span>`);addSLine(`<span class="dso">exit 1</span>`);notify("running: "+a[0]);},400);
+    },200);
+  },1800],
+  [()=>typeInto($i("d-shell-in"),"docker ps",()=>{addSLine(`<span class="dsp">❯</span> <span style="color:#fff">docker ps</span>`);addSLine(`<span class="dso">CONTAINER ID   IMAGE          STATUS</span>`);addSLine(`<span class="dso">a3f9c2b1d4e5   opensight:v6   Up 2 hours</span>`);$i("d-shell-in").value="";}),2000],
+  [()=>swTab("gaps"),1200],[()=>selG(0),500],[()=>selG(2),500],
+  [()=>{applied.add(0);renderG();notify("applied: dpsa → docker.sh");},1000],
+  [()=>selG(2),400],[()=>{applied.add(2);renderG();notify("applied: pt → python.sh");},1000],
+  [()=>selG(5),400],[()=>{applied.add(5);renderG();notify("applied: driftv → drift_extended.sh");},1000],
+  [()=>swTab("health"),1400],[()=>{},2000],
+  [()=>{swTab("aliases");document.querySelectorAll(".dcat").forEach(c=>c.classList.toggle("active",c.dataset.cat==="all"));selCat="all";selRow=-1;$i("d-search").value="";renderA("","all");},1200],
+  [()=>selA(0),400],[()=>selA(8),400],[()=>selA(16),400],[()=>selA(24),400],
+];
+
+let si=0;
+const totalSteps=seq.length;
+function prog(pct){$i("d-progress").style.width=pct+"%";}
+function runSeq(){
+  if(si>=seq.length){si=0;applied.clear();applied.add(1);renderG();}
+  prog((si/totalSteps)*100);
+  const[fn,delay]=seq[si++];fn();setTimeout(runSeq,delay);
+}
+setTimeout(runSeq,1000);
+
+function copyCode(btn){
+  const pre=btn.parentElement.querySelector("pre");
+  navigator.clipboard.writeText(pre.textContent.replace(/[^\S\n]+$/gm,"").trim()).then(()=>{btn.textContent="copied!";setTimeout(()=>btn.textContent="copy",2000);});
+}
+</script>
+</body>
+</html>
