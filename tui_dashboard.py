@@ -35,7 +35,11 @@ def draw_ui(stdscr):
 
         loot = load_loot()
         for i, item in enumerate(loot[-10:]):
-            stdscr.addstr(9 + i, 2, f"{item['timestamp']} :: {item['type']}")
+            targets = item.get('data', {}).get('targets', [])
+            personality = item.get('data', {}).get('personality', 'unknown')
+            agent = item.get('agent_id', 'unknown')
+            ts = item.get('timestamp', '')[:19]
+            stdscr.addstr(9 + i, 2, f"{ts} :: {agent} :: {personality} :: {targets}")
 
         stdscr.refresh()
         time.sleep(1)
