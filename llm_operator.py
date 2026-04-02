@@ -207,6 +207,9 @@ def _null_result(command: str, error: str) -> dict[str, Any]:
 # ── Interactive operator console ──────────────────────────────────────────────
 
 def operator_console() -> None:
+    global _dispatcher
+    from dispatcher import Dispatcher
+    _dispatcher = Dispatcher()
     print(f"\n[zer0DAYSlater] LLM Operator Interface — model: {MODEL}")
     print("[zer0DAYSlater] Type a command in plain English. 'quit' to exit.\n")
 
@@ -234,6 +237,10 @@ def operator_console() -> None:
             print(f"[+] Priority:  {result['priority']}")
             print(f"[+] Noise:     {result['noise']}")
             print(f"[+] Rationale: {result['rationale']}\n")
+            result["_raw_cmd"] = cmd
+            dispatch_result = _dispatcher.dispatch(result)
+            if dispatch_result.get("halted"):
+                print(f"[HALTED] reason={dispatch_result.get('reason')}")
 
 
 if __name__ == "__main__":
