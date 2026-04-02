@@ -1,291 +1,154 @@
-## Quickstart
-```bash
-git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
-cd zer0DAYSlater
-./install_omega.sh
-./doctor.sh        # verify environment
-./demo.sh          # confirm system works without live infrastructure
-```
+<h1 align="center">
+  <img src="static/subfinder-logo.png" alt="subfinder" width="200px">
+  <br>
+</h1>
 
-Expected demo output:
-```
-[✓] DEMO_MODE active
-[✓] LLM parse: {action: exfil, ...}
-[✓] session_drift_monitor loaded
-[✓] entropy_capsule loaded
-[✓] payload_mutator loaded
-[Gen 0] HTTPS  ✓ OK  142ms
-[Gen 1] WS     ✓ OK   87ms
-[Gen 2] DNS    ✗ DETECTED  201ms
-[✓] Peer 127.0.0.1 verified=True
-[✓] Demo complete
-```
+<h4 align="center">Fast passive subdomain enumeration tool.</h4>
 
-For live use:
-```bash
-cp .env.example .env
-nano .env          # fill in your C2 values
-source .env
-
-# Terminal 1 — C2 listeners + LAN peer discovery
-./start_c2.sh
-
-# Terminal 2 — operator console
-./omega_campaign.sh
-
-# Terminal 3 — live loot dashboard
-python3 tui_dashboard.py
-```
-
----
 
 <p align="center">
-
-[![CI](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml)
-
-  <img src="assets/zer0DAYSlater_logo.jpg" alt="zer0DAYSlater" width="340"/>
-
+<a href="https://goreportcard.com/report/github.com/projectdiscovery/subfinder/v2"><img src="https://goreportcard.com/badge/github.com/projectdiscovery/subfinder"></a>
+<a href="https://github.com/projectdiscovery/subfinder/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
+<a href="https://github.com/projectdiscovery/subfinder/releases"><img src="https://img.shields.io/github/release/projectdiscovery/subfinder"></a>
+<a href="https://twitter.com/pdiscoveryio"><img src="https://img.shields.io/twitter/follow/pdiscoveryio.svg?logo=twitter"></a>
+<a href="https://discord.gg/projectdiscovery"><img src="https://img.shields.io/discord/695645237418131507.svg?logo=discord"></a>
 </p>
 
-# zer0DAYSlater
-
-**Operator-controlled post-exploitation framework with a local LLM command interface, adversarial session integrity monitoring, and feedback-driven payload mutation.**
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-56%2F56-brightgreen.svg)](#)
-
----
-
-zer0DAYSlater is a post-exploitation research framework built around ideas most frameworks ignore.
-
-**Natural language is the operator interface.** Tell it what to do in plain English — `"exfil user profiles and ssh keys after midnight, stay silent"` — and a local Mistral instance parses intent into structured action objects, resolves time expressions, and dispatches to the appropriate module. No fixed command syntax. No cloud. No network calls. The LLM runs on your machine.
-
-**An agent that cannot detect its own reasoning degradation is a liability, not a capability.** Two monitoring layers sit between the parser and the dispatcher. The drift monitor tracks what the agent decides. The entropy capsule tracks how confidently it decides. Together they score every action against the session baseline and halt execution before bad decisions propagate.
-
-**Payloads evolve.** The mutation engine maintains fitness scores per personality, updated by channel feedback. Detection penalizes. Success boosts. High entropy and drift trigger forced rotation. The agent learns what works for this operator, on this network, in this session.
-
-**Trust is cryptographic.** The mTLS mesh issues ephemeral NaCl keypairs, verifies peers with time-bounded signed handshakes, encrypts all relay traffic with Curve25519/XSalsa20/Poly1305, and quarantines peers that fail verification. No plaintext. No assumed trust.
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#installation">Install</a> •
+  <a href="#running-subfinder">Usage</a> •
+  <a href="#post-installation-instructions">API Setup</a> •
+  <a href="#subfinder-go-library">Library</a> •
+  <a href="https://discord.gg/projectdiscovery">Join Discord</a>
+</p>
 
 ---
 
-## Pipeline
-```
-operator types natural language command
-        ↓
-llm_operator          — Mistral parses intent → structured action object
-  {action, targets, schedule, priority, noise, rationale}
-        ↓
-entropy_capsule       — scores LLM output confidence and coherence
-  signals: token_entropy / confidence_collapse / hallucination /
-           coherence_drift / instability_spike
-  entropy score 0.0–1.0 │ NOMINAL → ELEVATED → CRITICAL
-        ↓
-session_drift_monitor — scores behavioral deviation from baseline
-  signals: semantic_drift / scope_creep / structural_decay /
-           noise_violation / schedule_slip / parse_failure
-  drift score 0.0–1.0 │ NOMINAL → WARN → HALT
-        ↓
-payload_mutator       — selects personality, applies mutation ops
-  personalities: scout / ghost / leech / phantom / parasite / surgeon
-  ops: rotate / morph / fragment / delay / decoy
-  fitness updated by channel feedback each generation
-        ↓
-dispatcher            — routes action to OWN execution module
-  exfil→covert_exfil→HTTPS C2  persist→backdoor_seed
-  lateral→chimera_injector     recon→adaptive_probe
-        ↓
-payload_mutator feedback loop — fitness updated per result
-        ↓
-adaptive_channel_manager — transport selection with fallback
-        ↓
-mtls_mesh             — encrypted peer relay, verified handshake,
-                        quarantine for unverified nodes
-        ↓
-agent_core            — executes, reports back through mesh
-        ↓
-tui_dashboard         — live session state
+
+`subfinder` is a subdomain discovery tool that returns valid subdomains for websites, using passive online sources. It has a simple, modular architecture and is optimized for speed. `subfinder` is built for
+doing one thing only - passive subdomain enumeration, and it does that very well.
+
+We have made it to comply with all the used passive source licenses and usage restrictions. The passive model guarantees speed and stealthiness that can be leveraged by both penetration testers and bug bounty
+hunters alike.
+
+# Features
+
+<h1 align="left">
+  <img src="static/subfinder-run.png" alt="subfinder" width="700px"></a>
+  <br>
+</h1>
+
+- Fast and powerful resolution and wildcard elimination modules
+- **Curated** passive sources to maximize results
+- Multiple output formats supported (JSON, file, stdout)
+- Optimized for speed and **lightweight** on resources
+- **STDIN/OUT** support enables easy integration into workflows
+
+# Usage
+
+```sh
+subfinder -h
 ```
 
----
+This will display help for the tool. Here are all the switches it supports.
 
-## Session drift monitor
-```
-operator> exfil user profiles and ssh keys after midnight, stay silent
-[OK  ] drift=0.000 [                    ]
+```yaml
+Usage:
+  ./subfinder [flags]
 
-operator> exfil credentials after midnight
-[OK  ] drift=0.175 [███                 ]
-  ↳ scope_creep (sev=0.40): Target scope expanded beyond baseline
-  ↳ noise_violation (sev=0.50): Noise escalated from 'silent' to 'normal'
+Flags:
+INPUT:
+  -d, -domain string[]  domains to find subdomains for
+  -dL, -list string     file containing list of domains for subdomain discovery
 
-operator> exfil credentials, documents, and network configs
-[WARN] drift=0.552 [███████████         ]
-  ↳ scope_creep (sev=0.60): new targets: ['credentials', 'documents', 'network_configs']
+SOURCE:
+  -s, -sources string[]           specific sources to use for discovery (-s crtsh,github). Use -ls to display all available sources.
+  -recursive                      use only sources that can handle subdomains recursively (e.g. subdomain.domain.tld vs domain.tld)
+  -all                            use all sources for enumeration (slow)
+  -es, -exclude-sources string[]  sources to exclude from enumeration (-es alienvault,zoomeyeapi)
 
-operator> exfil everything aggressively right now
-[HALT] drift=1.000 [████████████████████]
-  ↳ noise_violation (sev=1.00): Noise escalated to 'aggressive'
-  ↳ scope_creep (sev=0.40): new targets: ['*']
+FILTER:
+  -m, -match string[]   subdomain or list of subdomain to match (file or comma separated)
+  -f, -filter string[]   subdomain or list of subdomain to filter (file or comma separated)
 
-SESSION REPORT: HALT
-  Actions: 5 │ Score: 1.0 │ Signals: 10
-  Breakdown: scope_creep×3, noise_violation×3, structural_decay×3, semantic_drift×1
-```
+RATE-LIMIT:
+  -rl, -rate-limit int  maximum number of http requests to send per second
+  -rls value            maximum number of http requests to send per second for providers in key=value format (-rls "hackertarget=10/s,shodan=15/s")
+  -t int                number of concurrent goroutines for resolving (-active only) (default 10)
 
-Drift scoring is weighted by signal type, amplified by repetition, decayed
-by recency. A single anomaly is a signal. The same anomaly three times is a pattern.
+UPDATE:
+  -up, -update                 update subfinder to latest version
+  -duc, -disable-update-check  disable automatic subfinder update check
 
----
+OUTPUT:
+  -o, -output string       file to write output to
+  -oJ, -json               write output in JSONL(ines) format
+  -oD, -output-dir string  directory to write output (-dL only)
+  -cs, -collect-sources    include all sources in the output (-json only)
+  -oI, -ip                 include host IP in output (-active only)
 
-## Entropy capsule engine
+CONFIGURATION:
+  -config string                flag config file (default "$CONFIG/subfinder/config.yaml")
+  -pc, -provider-config string  provider config file (default "$CONFIG/subfinder/provider-config.yaml")
+  -r string[]                   comma separated list of resolvers to use
+  -rL, -rlist string            file containing list of resolvers to use
+  -nW, -active                  display active subdomains only
+  -proxy string                 http proxy to use with subfinder
+  -ei, -exclude-ip              exclude IPs from the list of domains
 
-Instruments the LLM's output stream directly — not what it decides,
-but how confidently it decides it.
-```
-operator> exfil user profiles and ssh keys after midnight, stay silent
-[OK  ] entropy=0.138 [██                  ]
+DEBUG:
+  -silent             show only subdomains in output
+  -version            show version of subfinder
+  -v                  show verbose output
+  -nc, -no-color      disable color in output
+  -ls, -list-sources  list all available sources
 
-operator> do the thing with the stuff
-[OK  ] entropy=0.181 [███                 ]
-  ↳ hallucination (mag=1.00): 100% of targets not grounded in operator command
-  ↳ coherence_drift (mag=0.60): rationale does not explain action 'recon'
-
-operator> [degraded parse]
-[ELEV] entropy=0.420 [████████            ]
-  ↳ confidence_collapse (mag=0.90): model explanation missing
-  ↳ instability_spike (mag=0.94): Δ0.473 entropy jump between actions
-
-ENTROPY REPORT: ELEVATED
-  Breakdown: hallucination×2, coherence_drift×2, token_entropy×2,
-             confidence_collapse×1, instability_spike×1
-```
-
-Shannon entropy scoring on rationale text. Hallucination detection
-compares output targets against grounded operator input. Instability
-spikes catch sudden model degradation between consecutive actions.
-
----
-
-## Payload mutator
-
-Feedback-driven mutation engine. Personalities have fitness scores.
-Fitness is updated by what succeeds and what gets detected.
-```
-[Gen 0] surgeon    ops=['delay', 'morph']  fitness=0.70  ✓ HTTPS
-[Gen 1] surgeon    ops=['delay', 'morph']  fitness=0.78  ✗ DNS [DETECTED]
-[Gen 2] surgeon    ops=['delay', 'morph']  fitness=0.58  ✓ WS
-[Gen 3] surgeon    ops=['morph']           fitness=0.66  ✗ HTTPS
-[Gen 4] surgeon    ops=['delay', 'morph']  fitness=0.61  ✓ WS
-[Gen 5] leech      ops=['fragment']        fitness=0.65  ✗ DNS [DETECTED]
-
-── Fitness after campaign ──
-  scout        0.60 ████████████
-  ghost        0.55 ███████████
-  leech        0.45 █████████
-  surgeon      0.69 █████████████
+OPTIMIZATION:
+  -timeout int   seconds to wait before timing out (default 30)
+  -max-time int  minutes to wait for enumeration results (default 10)
 ```
 
-Inspired by the [chain mutation engine](https://github.com/GnomeMan4201/chain),
-rebuilt as a clean typed API integrated with the operator pipeline.
-High drift + high entropy triggers forced personality rotation.
+## Environment Variables
 
----
+Subfinder supports environment variables to specify custom paths for configuration files:
 
-## mTLS mesh
+- `SUBFINDER_CONFIG` - Path to config.yaml file (overrides default `$CONFIG/subfinder/config.yaml`)
+- `SUBFINDER_PROVIDER_CONFIG` - Path to provider-config.yaml file (overrides default `$CONFIG/subfinder/provider-config.yaml`)
 
-Mutual authentication before any data relay. Peers that fail
-verification are quarantined — not retried.
-```
-[A] fingerprint: 5a29cce0619698ec
-[B] fingerprint: 911871d07b46a115
+# Installation
 
-[*] B → A handshake token valid:     True
-[*] Tampered token rejected:         True
-[*] Encrypted message roundtrip:     True
-[*] Tampered ciphertext rejected:    True
-[*] Quarantine state recorded:       True
+`subfinder` requires **go1.24** to install successfully. Run the following command to install the latest version:
+
+```sh
+go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 ```
 
-Ephemeral NaCl keypairs per node. Signed handshake with 30-second
-replay protection window. Length-prefixed framing with 10MB max frame.
-Dynamic topology — peer list propagation, dead peer pruning every 30s.
+Learn about more ways to install subfinder here: https://docs.projectdiscovery.io/tools/subfinder/install.
 
----
+## Post Installation Instructions
 
-## LLM operator interface
+`subfinder` can be used right after the installation, however many sources required API keys to work. Learn more here: https://docs.projectdiscovery.io/tools/subfinder/install#post-install-configuration.
 
-Powered by a local Mistral instance via Ollama. Offline. No API key.
-Configurable via `ZDS_LLM_MODEL` env var.
-```python
-from llm_operator import parse_operator_command
+## Running Subfinder
 
-result = parse_operator_command("exfil ssh keys and credentials after 3pm, low noise")
-# {
-#   "action":    "exfil",
-#   "targets":   ["ssh_keys", "credentials"],
-#   "schedule":  "2025-11-09T15:00:00+00:00",
-#   "priority":  "normal",
-#   "noise":     "silent",
-#   "rationale": "Operator wants credential exfil deferred to afternoon window."
-# }
-```
+Learn about how to run Subfinder here: https://docs.projectdiscovery.io/tools/subfinder/running.
 
-Time expressions pre-resolved before the LLM call to eliminate
-hallucination on time arithmetic. Temperature 0.1 for deterministic output.
+## Subfinder Go library
 
----
+Subfinder can also be used as library and a minimal examples of using subfinder SDK is available [here](examples/main.go)
 
-## Architecture
-```
-zer0DAYSlater/
-├── dispatcher.py               routes action objects to OWN execution modules
-├── lan_discover.py             LANimals peer discovery → ZDS_PEERS
-├── start_c2.sh                 starts HTTPS + WebSocket C2 listeners
-├── llm_operator.py             Mistral-backed NL → structured action objects
-├── session_drift_monitor.py    behavioral drift detection + HALT logic
-├── entropy_capsule.py          LLM output entropy + hallucination tracking
-├── payload_mutator.py          feedback-driven personality/mutation engine
-├── mtls_mesh.py                NaCl mTLS peer mesh with quarantine
-├── omega_campaign.sh           campaign entry point + env validation
-├── tui_dashboard.py            live loot dashboard — agent/personality/targets
-├── memory_loader.py            in-memory payload execution without disk touch
-├── process_doppelganger.py     process name spoofing via prctl
-├── process_cloak.py            process identity masking
-├── evasion_win.py              Windows AMSI/ETW patch (xor eax,eax; ret)
-├── persistence.py              multi-vector persistence binding
-├── lateral.py                  authenticated lateral movement
-├── peer_auth.py                NaCl symmetric key peer verification
-├── proxy_fallback_check.py     C2 channel fallback logic
-└── core/
-    ├── adaptive_channel_manager.py   transport selection + fallback
-    ├── exfil_dns.py                  DNS exfil channel
-    ├── exfil_https.py                HTTPS exfil channel
-    ├── exfil_ws.py                   WebSocket exfil channel
-    └── exfil_mqtt.py                 MQTT exfil channel
-```
+</td>
+</tr>
+</table>
 
-**C2 channels:** DNS · HTTPS · WebSocket · MQTT · ICMP
+### Resources
 
-**Ecosystem:** [OWN](https://github.com/GnomeMan4201/OWN) (execution) · [LANimals](https://github.com/GnomeMan4201/LANimals) (recon) · [chain](https://github.com/GnomeMan4201/chain) (mutation)
+- [Recon with Me !!!](https://dhiyaneshgeek.github.io/bug/bounty/2020/02/06/recon-with-me/)
 
----
+# License
 
-## Tests
-```bash
-source .venv/bin/activate
-python3 -m pytest tests/ -v      # unit tests
-./scripts/smoke.sh               # runtime smoke checks
-# 56 passed
-```
+`subfinder` is made with 🖤 by the [projectdiscovery](https://projectdiscovery.io) team. Community contributions have made the project what it is. See
+the **[THANKS.md](https://github.com/projectdiscovery/subfinder/blob/main/THANKS.md)** file for more details.
 
----
-
-## Legal
-
-For authorized red team operations and security research in controlled
-environments only. Unauthorized use is prohibited.
-
----
-
-*zer0DAYSlater // badBANANA research // GnomeMan4201*
+Read the usage disclaimer at [DISCLAIMER.md](https://github.com/projectdiscovery/subfinder/blob/main/DISCLAIMER.md) and [contact us](mailto:contact@projectdiscovery.io) for any API removal.
