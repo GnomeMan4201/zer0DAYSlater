@@ -24,9 +24,17 @@ Expected demo output:
 For live use:
 ```bash
 cp .env.example .env
-# edit .env with real values
+nano .env          # fill in your C2 values
 source .env
+
+# Terminal 1 — C2 listeners + LAN peer discovery
+./start_c2.sh
+
+# Terminal 2 — operator console
 ./omega_campaign.sh
+
+# Terminal 3 — live loot dashboard
+python3 tui_dashboard.py
 ```
 
 ---
@@ -82,6 +90,12 @@ payload_mutator       — selects personality, applies mutation ops
   personalities: scout / ghost / leech / phantom / parasite / surgeon
   ops: rotate / morph / fragment / delay / decoy
   fitness updated by channel feedback each generation
+        ↓
+dispatcher            — routes action to OWN execution module
+  exfil→covert_exfil→HTTPS C2  persist→backdoor_seed
+  lateral→chimera_injector     recon→adaptive_probe
+        ↓
+payload_mutator feedback loop — fitness updated per result
         ↓
 adaptive_channel_manager — transport selection with fallback
         ↓
@@ -225,13 +239,16 @@ hallucination on time arithmetic. Temperature 0.1 for deterministic output.
 ## Architecture
 ```
 zer0DAYSlater/
+├── dispatcher.py               routes action objects to OWN execution modules
+├── lan_discover.py             LANimals peer discovery → ZDS_PEERS
+├── start_c2.sh                 starts HTTPS + WebSocket C2 listeners
 ├── llm_operator.py             Mistral-backed NL → structured action objects
 ├── session_drift_monitor.py    behavioral drift detection + HALT logic
 ├── entropy_capsule.py          LLM output entropy + hallucination tracking
 ├── payload_mutator.py          feedback-driven personality/mutation engine
 ├── mtls_mesh.py                NaCl mTLS peer mesh with quarantine
 ├── omega_campaign.sh           campaign entry point + env validation
-├── tui_dashboard.py            live operator session dashboard
+├── tui_dashboard.py            live loot dashboard — agent/personality/targets
 ├── memory_loader.py            in-memory payload execution without disk touch
 ├── process_doppelganger.py     process name spoofing via prctl
 ├── process_cloak.py            process identity masking
@@ -249,6 +266,8 @@ zer0DAYSlater/
 ```
 
 **C2 channels:** DNS · HTTPS · WebSocket · MQTT · ICMP
+
+**Ecosystem:** [OWN](https://github.com/GnomeMan4201/OWN) (execution) · [LANimals](https://github.com/GnomeMan4201/LANimals) (recon) · [chain](https://github.com/GnomeMan4201/chain) (mutation)
 
 ---
 
