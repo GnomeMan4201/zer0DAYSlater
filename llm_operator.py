@@ -247,28 +247,39 @@ def operator_console() -> None:
         print(f"[replay] replaying {len(tl)} actions from '{label}'")
         print(f"[replay] model: {MODEL}  — results may differ from original\n")
         for entry in tl:
+            # Reconstruct a full action object from timeline entry
             action_obj = {
-                "action":   entry.get("personality"),   # personality as proxy
-                "targets":  [],
-                "schedule": None,
-                "priority": "normal",
-                "noise":    "normal",
-                "rationale": "",
-                "_error":   None,
-                "_raw_cmd": f"replay action {entry.get('action_idx')}",
-                "_replay":  True,
+                "action":    entry.get("personality"),
+                "targets":   [],
+                "schedule":  None,
+                "priority":  "normal",
+                "noise":     "silent",
+                "rationale": f"replay of action {entry.get('action_idx')}",
+                "_error":    None,
+                "_raw_cmd":  f"replay action {entry.get('action_idx')}",
+                "_replay":   True,
                 "_original_entropy": entry.get("entropy"),
             }
+            # Run full pipeline: drift → entropy → mutation (no handler execution)
+            _dispatcher.drift.ingest(action_obj)
             entropy_signals = _dispatcher.entropy.ingest(
                 action_obj, action_obj["_raw_cmd"]
             )
-            orig = entry.get("entropy", 0.0)
-            curr = _dispatcher.entropy.current_entropy()
+            mutation = _dispatcher.mutator.mutate(
+                action_obj    = action_obj,
+                entropy_score = _dispatcher.entropy.current_entropy(),
+                drift_score   = _dispatcher.drift.drift_score,
+            )
+            orig  = entry.get("entropy", 0.0)
+            curr  = _dispatcher.entropy.current_entropy()
             delta = curr - orig
+            orig_pers = entry.get("personality", "?")
             print(
                 f"[replay {entry['action_idx']:>3}] "
                 f"orig_ent={orig:.3f}  curr_ent={curr:.3f}  "
-                f"delta={delta:+.4f}"
+                f"delta={delta:+.4f}  "
+                f"orig_pers={orig_pers:<10}  "
+                f"curr_pers={mutation.personality.value}"
             )
         print()
         print("[replay] complete — generating comparison report")
@@ -314,17 +325,20 @@ def operator_console() -> None:
                 if dispatch_result.get("halted"):
                     print(f"[HALTED] reason={dispatch_result.get('reason')}")
     finally:
-        if _dispatcher.drift.action_count > 0:
-            report = SessionReport(
-                drift   = _dispatcher.drift,
-                entropy = _dispatcher.entropy,
-                mutator = _dispatcher.mutator,
-            )
-            report.print_summary()
-            if args.save_report:
-                report.save(args.save_report)
-        else:
-            _dispatcher.fitness_report()
+        try:
+            if _dispatcher.drift.action_count > 0:
+                report = SessionReport(
+                    drift   = _dispatcher.drift,
+                    entropy = _dispatcher.entropy,
+                    mutator = _dispatcher.mutator,
+                )
+                report.print_summary()
+                if args.save_report:
+                    report.save(args.save_report)
+            else:
+                _dispatcher.fitness_report()
+        except Exception as exc:
+            print(f"[!] Session report failed: {exc}")
 
 if __name__ == "__main__":
     operator_console()
