@@ -46,15 +46,87 @@ def derive_key(agent_id: str) -> bytes:
         salt = hashlib.sha256(b"zds-default-salt").digest()
     prk = _hkdf_extract(salt, agent_id.encode("utf-8"))
     return _hkdf_expand(prk, _HKDF_CONTEXT)
-def load_encrypted_plugin(encrypted_blob, agent_id):
+# ── Ed25519 signature verification ───────────────────────────────────────────
+
+def _load_trusted_pubkey() -> bytes | None:
+    """
+    Load the Ed25519 public key used to verify plugin signatures.
+    Source: ZDS_PLUGIN_PUBKEY env var (base64-encoded 32-byte key).
+    Returns None if unset — callers must treat this as untrusted.
+    """
+    pubkey_b64 = os.environ.get("ZDS_PLUGIN_PUBKEY", "")
+    if not pubkey_b64:
+        return None
     try:
-        blob = json.loads(encrypted_blob.decode())
-        nonce = base64.b64decode(blob["nonce"])
+        return base64.b64decode(pubkey_b64)
+    except Exception:
+        return None
+
+
+def _verify_plugin_signature(code_bytes: bytes, signature_b64: str) -> bool:
+    """
+    Verify an Ed25519 signature over the decrypted plugin code.
+
+    The plugin encryptor signs SHA256(code_bytes) with the operator's
+    Ed25519 private key. This function verifies against the trusted
+    public key from ZDS_PLUGIN_PUBKEY.
+
+    Returns False if:
+      - ZDS_PLUGIN_PUBKEY is not set
+      - signature is malformed
+      - signature does not verify
+      - nacl is unavailable
+    """
+    pubkey_bytes = _load_trusted_pubkey()
+    if not pubkey_bytes:
+        return False
+    try:
+        from nacl.signing import VerifyKey
+        from nacl.exceptions import BadSignatureError
+        vk        = VerifyKey(pubkey_bytes)
+        signature = base64.b64decode(signature_b64)
+        digest    = hashlib.sha256(code_bytes).digest()
+        vk.verify(digest, signature)
+        return True
+    except Exception:
+        return False
+
+
+def load_encrypted_plugin(encrypted_blob, agent_id):
+    """
+    Decrypt and execute a plugin blob.
+
+    Security model:
+      1. AES-GCM decryption with HKDF-derived key — ensures confidentiality
+         and integrity of the ciphertext.
+      2. Ed25519 signature verification — ensures the decrypted code was
+         produced by the operator holding the signing private key.
+         Requires ZDS_PLUGIN_PUBKEY to be set. If unset, execution is
+         BLOCKED — unsigned plugins are rejected by default.
+
+    Both checks must pass before exec() is called.
+    """
+    try:
+        blob       = json.loads(encrypted_blob.decode())
+        nonce      = base64.b64decode(blob["nonce"])
         ciphertext = base64.b64decode(blob["ciphertext"])
-        tag = base64.b64decode(blob["tag"])
-        key = derive_key(agent_id)
-        cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
+        tag        = base64.b64decode(blob["tag"])
+        signature  = blob.get("signature", "")
+
+        # Step 1 — decrypt
+        key       = derive_key(agent_id)
+        cipher    = AES.new(key, AES.MODE_GCM, nonce=nonce)
         decrypted = cipher.decrypt_and_verify(ciphertext, tag)
-        exec(decrypted, {})
+
+        # Step 2 — verify signature before execution
+        if not signature:
+            print("[!] Plugin rejected: no signature field in blob")
+            return
+        if not _verify_plugin_signature(decrypted, signature):
+            print("[!] Plugin rejected: Ed25519 signature verification failed")
+            return
+
+        exec(decrypted, {})  # noqa: S102 — guarded by AES-GCM + Ed25519
+
     except Exception as e:
         print(f"[!] Plugin Load Failed: {e}")
