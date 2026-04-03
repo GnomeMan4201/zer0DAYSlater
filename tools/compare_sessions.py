@@ -11,7 +11,6 @@ Usage:
 from __future__ import annotations
 import json, sys
 from pathlib import Path
-from typing import Any
 
 _SCORE_SIGNIFICANT   = 0.10
 _FITNESS_SIGNIFICANT = 0.08

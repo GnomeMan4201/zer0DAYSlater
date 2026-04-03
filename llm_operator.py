@@ -262,7 +262,7 @@ def operator_console() -> None:
             }
             # Run full pipeline: drift → entropy → mutation (no handler execution)
             _dispatcher.drift.ingest(action_obj)
-            entropy_signals = _dispatcher.entropy.ingest(
+            _entropy_signals = _dispatcher.entropy.ingest(  # ingested for side-effects
                 action_obj, action_obj["_raw_cmd"]
             )
             mutation = _dispatcher.mutator.mutate(
@@ -283,7 +283,6 @@ def operator_console() -> None:
             )
         print()
         print("[replay] complete — generating comparison report")
-        from tools.session_report import SessionReport
         report = SessionReport(
             drift   = _dispatcher.drift,
             entropy = _dispatcher.entropy,

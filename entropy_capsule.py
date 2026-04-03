@@ -20,7 +20,6 @@ Designed to integrate with llm_operator.py output and session_drift_monitor.py.
 """
 from __future__ import annotations
 
-import hashlib
 import math
 import re
 import time

@@ -19,7 +19,6 @@ Can be used standalone as a session auditor or inline as a gate.
 """
 from __future__ import annotations
 
-import json
 import time
 import datetime
 from collections import deque
