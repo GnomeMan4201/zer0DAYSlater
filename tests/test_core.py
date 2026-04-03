@@ -575,25 +575,31 @@ def test_mesh_keypair_generation():
 
 
 def test_handshake_token_valid():
+    import hashlib
     from mtls_mesh import MTLSMesh, _sign_handshake, _verify_handshake
-    node = MTLSMesh()
-    token = _sign_handshake(node.private_key, "192.168.1.1")
-    assert _verify_handshake(node.public_key_b64, token, "192.168.1.1")
+    node     = MTLSMesh()
+    token    = _sign_handshake(node.private_key, "192.168.1.1")
+    hmac_key = hashlib.sha256(bytes(node.private_key)).digest()
+    assert _verify_handshake(node.public_key_b64, token, "192.168.1.1", hmac_key=hmac_key)
 
 
 def test_handshake_token_tampered_rejected():
+    import hashlib
     from mtls_mesh import MTLSMesh, _sign_handshake, _verify_handshake
-    node = MTLSMesh()
-    token = _sign_handshake(node.private_key, "192.168.1.1")
+    node     = MTLSMesh()
+    token    = _sign_handshake(node.private_key, "192.168.1.1")
     tampered = token[:-4] + "xxxx"
-    assert not _verify_handshake(node.public_key_b64, tampered, "192.168.1.1")
+    hmac_key = hashlib.sha256(bytes(node.private_key)).digest()
+    assert not _verify_handshake(node.public_key_b64, tampered, "192.168.1.1", hmac_key=hmac_key)
 
 
 def test_handshake_wrong_ip_rejected():
+    import hashlib
     from mtls_mesh import MTLSMesh, _sign_handshake, _verify_handshake
-    node = MTLSMesh()
-    token = _sign_handshake(node.private_key, "192.168.1.1")
-    assert not _verify_handshake(node.public_key_b64, token, "10.0.0.99")
+    node     = MTLSMesh()
+    token    = _sign_handshake(node.private_key, "192.168.1.1")
+    hmac_key = hashlib.sha256(bytes(node.private_key)).digest()
+    assert not _verify_handshake(node.public_key_b64, token, "10.0.0.99", hmac_key=hmac_key)
 
 
 def test_encrypted_roundtrip():
