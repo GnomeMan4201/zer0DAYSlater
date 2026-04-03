@@ -146,15 +146,15 @@ is an open problem.
    should be model-specific and operation-type-specific.
 
 3. **Cross-session fitness persistence** — the mutation engine's fitness
-   scores reset. Persistent learning requires solving the disk-write OPSEC
-   problem.
+   scores reset each session. Persistent learning requires solving the
+   disk-write OPSEC problem. *Open.*
 
 4. **Persistent mesh identity** — ephemeral keys mean nodes cannot prove
-   continuity of identity across sessions.
+   continuity of identity across sessions. *Open.*
 
 5. **Gradual degradation detection** — both monitors use threshold-based
-   scoring. A model that degrades below detection threshold consistently
-   is invisible to the current implementation.
+   scoring. A model that degrades consistently below detection threshold
+   is invisible to the current implementation. *Open.*
 
 ---
 

@@ -105,7 +105,7 @@ Publishing this is intentional. Transparency about how a dual-use tool works is 
 
 **The risk, stated plainly:** If the C2 channel is compromised or the encryption key is obtained, this is full remote code execution on the agent host. There is no sandbox, no capability restriction, and no signature verification on the decrypted payload. A defender observing a Python process invoking `exec()` on a decrypted remote buffer should treat it as high-confidence malicious activity regardless of the operator's intent.
 
-**Planned improvement:** Payload signing with a separate Ed25519 key, verified before decryption, so a compromised C2 channel alone cannot inject arbitrary code.
+**Status: Fixed.** Ed25519 signature verification is now enforced before `exec()` in `memory_loader.py`. The plugin encryptor signs `SHA256(code_bytes)` with the operator signing key. Unsigned or incorrectly signed plugins are rejected. See commit `bab60dd`.
 
 ---
 
@@ -115,7 +115,7 @@ Publishing this is intentional. Transparency about how a dual-use tool works is 
 
 **The risk:** 8 characters of a UUID is not a secret. The key space is drastically smaller than AES-256 implies. An attacker who can observe agent IDs (trivially possible if C2 traffic is captured) can brute-force or reconstruct plugin keys. The encryption primitive (AES-GCM) is sound; the key derivation is not.
 
-**Planned improvement:** Replace agent-ID-derived keys with a proper key exchange — either a pre-shared secret negotiated at agent registration using NaCl Box (already present in `peer_auth.py`) or a full HKDF-derived key from the mTLS handshake.
+**Status: Fixed.** `derive_key()` now uses HKDF-SHA256 with a salt from `ZDS_PLUGIN_SALT` and a fixed context string. The key is no longer derivable from the agent ID alone. See commit `3a2989c`.
 
 ---
 
@@ -125,7 +125,7 @@ Publishing this is intentional. Transparency about how a dual-use tool works is 
 
 **The risk:** This is not a keyed MAC. It incorporates no secret material. Any peer can compute a valid token from public data alone — which means "no trust without cryptographic proof" does not hold as currently implemented. The mTLS peer authentication claim is overstated.
 
-**Planned improvement:** Replace with `HMAC-SHA256(pre_shared_node_secret, public_key || peer_ip || timestamp)` using a secret established at node provisioning, or migrate to full certificate-pinned mTLS where the TLS handshake itself is the authentication mechanism.
+**Status: Fixed.** `_sign_handshake()` now uses `HMAC-SHA256` keyed on `SHA256(private_key_bytes)`. The token is no longer forgeable from public data alone. `hmac.compare_digest()` prevents timing oracle attacks. See commit `ea805df`.
 
 ---
 
@@ -135,7 +135,7 @@ Publishing this is intentional. Transparency about how a dual-use tool works is 
 
 **The risk:** Any network position capable of intercepting traffic can MitM the C2 channel without detection. This is a significant operational weakness — and also a defensive opportunity. A sinkhole or TLS inspection proxy can silently intercept all C2 communications.
 
-**Planned improvement:** Pin the C2 server's certificate fingerprint at agent build time and enforce validation on all channels. Self-signed certs are fine for a research lab; pinning is what matters.
+**Status: Fixed.** `_handle_exfil()` in `dispatcher.py` now uses a `FingerprintAdapter` that pins against `ZDS_C2_CERT_FINGERPRINT` when set. Falls back to system CA verification (`verify=True`) — never `verify=False`. See commit `2b0ea7a`.
 
 ---
 
@@ -230,10 +230,10 @@ Releasing this framework publicly comes with the expectation that the security r
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Priority areas for contribution:
 
-- Ed25519 payload signing (addresses `exec()` injection risk)
-- Proper HMAC mesh handshake (addresses MAC forgery weakness)
-- TLS certificate pinning (addresses MitM risk)
-- HKDF-based plugin key derivation (addresses weak key material)
+- Cross-session fitness persistence for the mutation engine
+- Persistent mesh node identity across sessions
+- Gradual degradation detection below threshold
+- Additional exfil channel implementations (ICMP, covert HTTP)
 
 ---
 

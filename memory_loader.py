@@ -82,7 +82,7 @@ def _verify_plugin_signature(code_bytes: bytes, signature_b64: str) -> bool:
         return False
     try:
         from nacl.signing import VerifyKey
-            vk        = VerifyKey(pubkey_bytes)
+        vk        = VerifyKey(pubkey_bytes)
         signature = base64.b64decode(signature_b64)
         digest    = hashlib.sha256(code_bytes).digest()
         vk.verify(digest, signature)
