@@ -183,7 +183,6 @@ def _handle_persist(action_obj, mutation):
         return {"success": False, "detected": False, "channel": "local", "latency_ms": 0.0, "error": str(e)}
 
 def _handle_lateral(action_obj, mutation):
-    _targets = action_obj.get("targets", [])  # reserved for future use
     try:
         import ghost_probe
         import chimera_injector
