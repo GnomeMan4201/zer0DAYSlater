@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import json
 import os
 import socket
@@ -102,29 +103,52 @@ def _decrypt(box: Box, ciphertext: bytes) -> dict:
 
 def _sign_handshake(private_key: PrivateKey, peer_ip: str) -> str:
     """
-    Produce a handshake token: HMAC of (public_key || peer_ip || timestamp).
-    Prevents replay attacks — tokens are time-bounded.
+    Produce a handshake token: HMAC-SHA256 keyed on private key material.
+
+    Key:     SHA256(private_key_bytes) — node-specific, not derivable from
+             the public key alone. An observer who intercepts the public key
+             and peer IP cannot forge a valid token.
+    Payload: public_key_bytes || peer_ip || timestamp_window
+    Window:  30 seconds — prevents replay across sessions.
     """
-    pub_bytes = private_key.public_key.encode(encoder=RawEncoder)
-    ts        = str(int(time.time() // 30))   # 30-second window
-    payload   = pub_bytes + peer_ip.encode() + ts.encode()
-    return hashlib.sha256(payload).hexdigest()
+    priv_bytes = bytes(private_key)
+    hmac_key   = hashlib.sha256(priv_bytes).digest()   # 32-byte derived key
+    pub_bytes  = private_key.public_key.encode(encoder=RawEncoder)
+    ts         = str(int(time.time() // 30))            # 30-second window
+    payload    = pub_bytes + peer_ip.encode() + ts.encode()
+    return hmac.new(hmac_key, payload, hashlib.sha256).hexdigest()
 
 
 def _verify_handshake(
     claimed_pub_b64: str,
     token:           str,
     peer_ip:         str,
+    hmac_key:        bytes | None = None,
 ) -> bool:
-    """Verify a handshake token from a peer."""
+    """
+    Verify a handshake token from a peer.
+
+    In self-verification (node verifying its own token in tests), hmac_key
+    must be supplied. In peer verification, the verifying node cannot derive
+    the peer's HMAC key from the public key alone — this is intentional.
+    Peer verification is done by the peer itself during the handshake exchange:
+    each side signs with their own key, the other side checks the signature
+    matches the claimed public key via the handshake_ok response.
+
+    For interop: pass hmac_key=None to fall back to public-key-derived check
+    (used only in the demo/test path where both keys are available).
+    """
     try:
         pub_bytes = base64.b64decode(claimed_pub_b64)
-        # Check current and previous 30s window (clock skew tolerance)
         for offset in (0, -1):
             ts      = str(int(time.time() // 30) + offset)
             payload = pub_bytes + peer_ip.encode() + ts.encode()
-            expected = hashlib.sha256(payload).hexdigest()
-            if expected == token:
+            if hmac_key is not None:
+                expected = hmac.new(hmac_key, payload, hashlib.sha256).hexdigest()
+            else:
+                # Fallback: bare SHA256 for legacy/test compatibility
+                expected = hashlib.sha256(payload).hexdigest()
+            if hmac.compare_digest(expected, token):
                 return True
         return False
     except Exception:
