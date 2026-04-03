@@ -47,34 +47,61 @@ def derive_key(agent_id: str) -> bytes:
         salt = hashlib.sha256(b"zds-default-salt").digest()
     prk = _hkdf_extract(salt, agent_id.encode("utf-8"))
     return _hkdf_expand(prk, _HKDF_CONTEXT)
-def encrypt_plugin(raw_code: str, agent_id: str) -> str:
-    key = derive_key(agent_id)
-    nonce = get_random_bytes(12)
-    cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
-    ciphertext, tag = cipher.encrypt_and_digest(raw_code.encode())
+def encrypt_plugin(raw_code: str, agent_id: str, signing_key_b64: str = "") -> str:
+    """
+    Encrypt and optionally sign a plugin.
+
+    If signing_key_b64 is provided (base64-encoded Ed25519 signing key),
+    the decrypted code bytes are signed with SHA256(code) and the signature
+    is included in the blob. The loader will reject unsigned plugins when
+    ZDS_PLUGIN_PUBKEY is configured.
+
+    Set ZDS_PLUGIN_SIGNING_KEY env var to avoid passing the key on the CLI.
+    """
+    import hashlib
+
+    key        = derive_key(agent_id)
+    nonce      = get_random_bytes(12)
+    cipher     = AES.new(key, AES.MODE_GCM, nonce=nonce)
+    code_bytes = raw_code.encode()
+    ciphertext, tag = cipher.encrypt_and_digest(code_bytes)
 
     package = {
-        "nonce": base64.b64encode(nonce).decode(),
+        "nonce":      base64.b64encode(nonce).decode(),
         "ciphertext": base64.b64encode(ciphertext).decode(),
-        "tag": base64.b64encode(tag).decode(),
+        "tag":        base64.b64encode(tag).decode(),
+        "signature":  "",
     }
+
+    sk_b64 = signing_key_b64 or os.environ.get("ZDS_PLUGIN_SIGNING_KEY", "")
+    if sk_b64:
+        try:
+            from nacl.signing import SigningKey
+            sk     = SigningKey(base64.b64decode(sk_b64))
+            digest = hashlib.sha256(code_bytes).digest()
+            signed = sk.sign(digest)
+            package["signature"] = base64.b64encode(signed.signature).decode()
+        except Exception as e:
+            print(f"[!] Signing failed: {e} — blob will have empty signature")
+
     return json.dumps(package)
 
 
 if __name__ == "__main__":
     import sys
-
-    if len(sys.argv) != 4:
-        print("Usage: python plugin_encryptor.py <plugin.py> <agent_id> <output.txt>")
+    if len(sys.argv) < 4:
+        print("Usage: python plugin_encryptor.py <plugin.py> <agent_id> <output.txt> [signing_key_b64]")
+        print("       Or set ZDS_PLUGIN_SIGNING_KEY in environment.")
         exit(1)
-
-    plugin_path, agent_id, output_path = sys.argv[1], sys.argv[2], sys.argv[3]
-
+    plugin_path = sys.argv[1]
+    agent_id    = sys.argv[2]
+    output_path = sys.argv[3]
+    signing_key = sys.argv[4] if len(sys.argv) > 4 else ""
     with open(plugin_path, "r") as f:
         plugin_code = f.read()
-
-    encrypted = encrypt_plugin(plugin_code, agent_id)
-
+    encrypted = encrypt_plugin(plugin_code, agent_id, signing_key_b64=signing_key)
     with open(output_path, "w") as out:
         out.write(encrypted)
-        print(f"[+] Encrypted plugin written to {output_path}")
+    signed = json.loads(encrypted).get("signature", "") != ""
+    print(f"[+] Encrypted plugin written to {output_path}")
+    print(f"[+] Signed: {signed}")
