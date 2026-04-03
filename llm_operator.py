@@ -262,7 +262,7 @@ def operator_console() -> None:
             }
             # Run full pipeline: drift → entropy → mutation (no handler execution)
             _dispatcher.drift.ingest(action_obj)
-            _entropy_signals = _dispatcher.entropy.ingest(  # ingested for side-effects
+            _dispatcher.entropy.ingest(  # ingested for side-effects
                 action_obj, action_obj["_raw_cmd"]
             )
             mutation = _dispatcher.mutator.mutate(
