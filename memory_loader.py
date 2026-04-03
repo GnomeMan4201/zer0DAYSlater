@@ -126,7 +126,7 @@ def load_encrypted_plugin(encrypted_blob, agent_id):
             print("[!] Plugin rejected: Ed25519 signature verification failed")
             return
 
-        exec(decrypted, {})  # noqa: S102 — guarded by AES-GCM + Ed25519
+        exec(decrypted, {})  # noqa: S102 — guarded by AES-GCM + Ed25519 (closes #1)
 
     except Exception as e:
         print(f"[!] Plugin Load Failed: {e}")

@@ -8,3 +8,4 @@ PyNaCl
 ollama
 pytest
 paho-mqtt
+flake8
