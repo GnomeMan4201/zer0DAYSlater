@@ -59,5 +59,6 @@ echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Pipeline complete — 6 layers demonstrated"
-echo "  56 tests passing │ CI green │ Offline │ No API key │ No cloud"
+TEST_COUNT=$(python3 -m pytest tests/ -q 2>/dev/null | grep -oP "\d+ passed" | head -1)
+echo "  ${TEST_COUNT} | CI green | Offline | No API key | No cloud"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
