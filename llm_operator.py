@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import json
 import os
+import readline
+import atexit
 import re
 import datetime
 from typing import Any
@@ -206,6 +208,16 @@ def _null_result(command: str, error: str) -> dict[str, Any]:
 
 # ── Interactive operator console ──────────────────────────────────────────────
 
+# ── Readline history ──────────────────────────────────────────────────────────
+def _setup_readline() -> None:
+    hist = os.path.expanduser("~/.zds_history")
+    try:
+        readline.read_history_file(hist)
+    except FileNotFoundError:
+        pass
+    readline.set_history_length(500)
+    atexit.register(readline.write_history_file, hist)
+
 def operator_console() -> None:
     global _dispatcher
     import argparse
@@ -215,9 +227,63 @@ def operator_console() -> None:
     ap = argparse.ArgumentParser(prog="llm_operator", add_help=False)
     ap.add_argument("--save-report", metavar="PATH", default=None,
                     help="Save session JSON report to PATH on exit")
+    ap.add_argument("--replay", metavar="SESSION_JSON", default=None,
+                    help="Replay a saved session JSON through the pipeline")
     args, _ = ap.parse_known_args()
 
     _dispatcher = Dispatcher()
+    _setup_readline()
+
+    # ── Replay mode ───────────────────────────────────────────────────────────
+    if args.replay:
+        import json as _json
+        rpath = Path(args.replay)
+        if not rpath.exists():
+            print(f"[!] Replay file not found: {args.replay}")
+            return
+        session = _json.loads(rpath.read_text())
+        tl = session.get("timeline", [])
+        label = session.get("session_label", "unknown")
+        print(f"[replay] replaying {len(tl)} actions from '{label}'")
+        print(f"[replay] model: {MODEL}  — results may differ from original\n")
+        for entry in tl:
+            action_obj = {
+                "action":   entry.get("personality"),   # personality as proxy
+                "targets":  [],
+                "schedule": None,
+                "priority": "normal",
+                "noise":    "normal",
+                "rationale": "",
+                "_error":   None,
+                "_raw_cmd": f"replay action {entry.get('action_idx')}",
+                "_replay":  True,
+                "_original_entropy": entry.get("entropy"),
+            }
+            entropy_signals = _dispatcher.entropy.ingest(
+                action_obj, action_obj["_raw_cmd"]
+            )
+            orig = entry.get("entropy", 0.0)
+            curr = _dispatcher.entropy.current_entropy()
+            delta = curr - orig
+            print(
+                f"[replay {entry['action_idx']:>3}] "
+                f"orig_ent={orig:.3f}  curr_ent={curr:.3f}  "
+                f"delta={delta:+.4f}"
+            )
+        print()
+        print("[replay] complete — generating comparison report")
+        from tools.session_report import SessionReport
+        report = SessionReport(
+            drift   = _dispatcher.drift,
+            entropy = _dispatcher.entropy,
+            mutator = _dispatcher.mutator,
+            label   = f"replay_of_{label}",
+        )
+        report.print_summary()
+        if args.save_report:
+            report.save(args.save_report)
+        return
+
     print(f"\n[zer0DAYSlater] LLM Operator Interface — model: {MODEL}")
     print("[zer0DAYSlater] Type a command in plain English. 'quit' to exit.\n")
 
