@@ -208,40 +208,57 @@ def _null_result(command: str, error: str) -> dict[str, Any]:
 
 def operator_console() -> None:
     global _dispatcher
+    import argparse
     from dispatcher import Dispatcher
+    from tools.session_report import SessionReport
+
+    ap = argparse.ArgumentParser(prog="llm_operator", add_help=False)
+    ap.add_argument("--save-report", metavar="PATH", default=None,
+                    help="Save session JSON report to PATH on exit")
+    args, _ = ap.parse_known_args()
+
     _dispatcher = Dispatcher()
     print(f"\n[zer0DAYSlater] LLM Operator Interface — model: {MODEL}")
     print("[zer0DAYSlater] Type a command in plain English. 'quit' to exit.\n")
 
-    while True:
-        try:
-            cmd = input("operator> ").strip()
-        except (KeyboardInterrupt, EOFError):
-            print("\n[*] Session ended.")
-            break
-
-        if cmd.lower() in ("quit", "exit", "q"):
-            break
-        if not cmd:
-            continue
-
-        print("[*] Parsing intent...", flush=True)
-        result = parse_operator_command(cmd)
-
-        if result["_error"]:
-            print(f"[!] Parse error: {result['_error']}")
+    try:
+        while True:
+            try:
+                cmd = input("operator> ").strip()
+            except (KeyboardInterrupt, EOFError):
+                print("\n[*] Session ended.")
+                break
+            if cmd.lower() in ("quit", "exit", "q"):
+                break
+            if not cmd:
+                continue
+            print("[*] Parsing intent...", flush=True)
+            result = parse_operator_command(cmd)
+            if result["_error"]:
+                print(f"[!] Parse error: {result['_error']}")
+            else:
+                print(f"\n[+] Action:    {result['action']}")
+                print(f"[+] Targets:   {result['targets']}")
+                print(f"[+] Schedule:  {result['schedule']}")
+                print(f"[+] Priority:  {result['priority']}")
+                print(f"[+] Noise:     {result['noise']}")
+                print(f"[+] Rationale: {result['rationale']}\n")
+                result["_raw_cmd"] = cmd
+                dispatch_result = _dispatcher.dispatch(result)
+                if dispatch_result.get("halted"):
+                    print(f"[HALTED] reason={dispatch_result.get('reason')}")
+    finally:
+        if _dispatcher.drift.action_count > 0:
+            report = SessionReport(
+                drift   = _dispatcher.drift,
+                entropy = _dispatcher.entropy,
+                mutator = _dispatcher.mutator,
+            )
+            report.print_summary()
+            if args.save_report:
+                report.save(args.save_report)
         else:
-            print(f"\n[+] Action:    {result['action']}")
-            print(f"[+] Targets:   {result['targets']}")
-            print(f"[+] Schedule:  {result['schedule']}")
-            print(f"[+] Priority:  {result['priority']}")
-            print(f"[+] Noise:     {result['noise']}")
-            print(f"[+] Rationale: {result['rationale']}\n")
-            result["_raw_cmd"] = cmd
-            dispatch_result = _dispatcher.dispatch(result)
-            if dispatch_result.get("halted"):
-                print(f"[HALTED] reason={dispatch_result.get('reason')}")
-
+            _dispatcher.fitness_report()
 
 if __name__ == "__main__":
     operator_console()
