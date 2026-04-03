@@ -27,3 +27,4 @@ session_memory.json
 key.pem
 cert.pem
 .env
+aliasOS/
