@@ -149,17 +149,17 @@ class SessionReport:
 
         d = r["drift"]
         print(f"║  DRIFT    score={d['score']:.3f}  status={d['status']:<8}               ║")
-        print(f"║           {_bar(d['score'] or 0):<52}║")
+        print(f"║           {_bar(d['score'] or 0):<20}                             ║")
         for sig, cnt in (d["signal_breakdown"] or {}).items():
-            print(f"║    ↳ {sig:<28} ×{cnt:<21}║")
+            print(f"║    ↳ {sig:<28} ×{cnt:<2}                    ║")
 
         print("╠══════════════════════════════════════════════════════╣")
 
         e = r["entropy"]
         print(f"║  ENTROPY  score={e['score']:.3f}  status={e['status']:<8}               ║")
-        print(f"║           {_bar(e['score'] or 0):<52}║")
+        print(f"║           {_bar(e['score'] or 0):<20}                             ║")
         for sig, cnt in (e["signal_breakdown"] or {}).items():
-            print(f"║    ↳ {sig:<28} ×{cnt:<21}║")
+            print(f"║    ↳ {sig:<28} ×{cnt:<2}                    ║")
 
         print("╠══════════════════════════════════════════════════════╣")
 
