@@ -81,31 +81,11 @@ This drops you into an interactive `Ω>` shell for issuing system-level commands
 
 ## Architecture
 
-The operational flow:
-```
-Operator Console (llm_operator.py)
-        │
-        ▼
-  LLM Intent Parser ──► Session Drift Monitor (kill-switch)
-        │
-        ▼
-  Task Dispatcher
-   ┌────┴─────────────────────────┐
-   ▼                              ▼
-Exfil Channels              Evasion / Persistence
-HTTPS / WS / DNS            AMSI patch / cron / Run key
-MQTT / ICMP                 Process cloak / lateral
-   │
-   ▼
-Adaptive Channel Manager (shuffles, retries on block)
-   │
-   ▼
-C2 Infrastructure
-WebSocket :8765 / FastAPI :8080
-   │
-   ▼
-Encrypted Plugin Delivery → memory_loader.py → exec()
-```
+The operator pipeline — from natural language command to execution:
+The three monitoring layers compose: drift watches *what* the agent decides,
+entropy watches *how confidently* it decides, and the mutator watches
+*what survives* in the channel. All three feed into the session report
+for post-op analysis.
 
 ---
 
