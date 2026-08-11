@@ -1,180 +1,138 @@
 # zer0DAYSlater
 
-> Operator-controlled post-exploitation research framework with adaptive C2, evasion instrumentation, and LLM-driven session analysis.
+> Historical adversarial-systems research framework retained for inspectable defensive study, regression work, and provenance.
 
 [![CI](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml/badge.svg)](https://github.com/GnomeMan4201/zer0DAYSlater/actions/workflows/ci.yml)
-
 
 ![zer0DAYSlater Logo](https://github.com/GnomeMan4201/zer0DAYSlater/raw/main/assets/zer0DAYSlater_logo.jpg)
 
 ---
 
-## Overview
+## Status
 
-`zer0DAYSlater` is a modular post-exploitation framework built for **authorized red team research and adversarial simulation**. It is designed to replicate the tradecraft of advanced persistent threat actors in a controlled, fully observable environment — so defenders can study, instrument, and respond to realistic attack behavior without exposing live infrastructure.
+`zer0DAYSlater` is retained as an adversarial-systems research artifact rather than presented as a current flagship or production red-team platform.
 
-Core capabilities:
+Its useful public value is inspectability: the repository exposes implementation choices, defensive indicators, historical weaknesses and fixes, and an instrumented lab surface for studying how post-exploitation-style behaviors appear to defenders.
 
-- Dynamic process cloaking and evasion instrumentation
-- Multi-channel exfiltration (DNS, HTTPS, MQTT, ICMP) with adaptive channel selection
-- Peer-to-peer mesh agent C2 with cryptographic peer verification
-- LLM operator console with session drift monitoring and hallucination kill-switch
-- Live TUI dashboard with interactive command execution
-- Loot tagging, PDF mission reporting, and session replay
-
-This is not a fire-and-forget exploit kit. Every action is logged, every channel is observable, and the entire system is designed to be run in air-gapped or isolated lab environments. The goal is instrumented adversarial simulation — not operational offense.
+The framework includes dual-use mechanisms. Treat the repository as **isolated-lab research code**, not as a deployment recommendation.
 
 ---
 
-## Features
+## Research scope
 
-| Module | Description |
-|---|---|
-| `memory_loader.py` | In-memory payload execution without disk writes |
-| `process_doppelganger.py` | Process name spoofing via `prctl(PR_SET_NAME)` |
-| `evasion_win.py` | Windows AMSI/ETW instrumentation (research only) |
-| `peer_auth.py` | Peer verification using NaCl Box key exchange |
-| `c2_mesh_agent.py` | P2P mesh C2 with covert channel routing |
-| `agent/ghost_daemon.py` | Stealthy persistence loop for simulation |
-| `tools/task_dispatcher.py` | Agent tasking and command dispatch |
-| `llm_command_parser.py` | Natural language → structured operator commands |
-| `core/adaptive_channel_manager.py` | Multi-protocol transport with fallback logic |
+The codebase explores observable behavior around:
+
+- process-name masquerading and evasion instrumentation
+- multi-channel transport and fallback behavior
+- peer-to-peer agent coordination and authentication
+- LLM-assisted operator/session analysis
+- local task dispatch and instrumented execution paths
+- session logging, replay, and defensive artifact generation
+
+The repository is most useful when read from both sides: implementation behavior and the defender-facing indicators documented below.
 
 ---
 
-## Installation
+## Lab installation
 
-> Requires: Python 3.10+, Linux. Virtual environment strongly recommended.
+Requires Python 3.10+ and Linux for the primary development path. Use an isolated environment.
+
 ```bash
 git clone https://github.com/GnomeMan4201/zer0DAYSlater.git
 cd zer0DAYSlater
-
 python3 -m venv .venv
 source .venv/bin/activate
-
-pip install -r requirements.txt
-./install_omega.sh
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-**Testing:**
+Run the repository validation harness:
+
 ```bash
 chmod +x zer0DAYSlater_test_runner.sh
 ./zer0DAYSlater_test_runner.sh
 ```
 
-**Demo mode** (local endpoints, no external infrastructure required):
+The repository also retains a local demo harness:
+
 ```bash
 ./scripts/demo.sh
 ```
 
----
-
-## Usage
-```bash
-./omega_campaign.sh
-omega-operator
-```
-
-This drops you into an interactive `Ω>` shell for issuing system-level commands via the LLM operator interface.
+A passing test/demo run establishes only the behavior covered by that revision's harness. It does not establish stealth, operational effectiveness, or suitability for a real environment.
 
 ---
 
-## Architecture
+## Architecture under study
 
-The operator pipeline — from natural language command to execution:
-The three monitoring layers compose: drift watches *what* the agent decides,
-entropy watches *how confidently* it decides, and the mutator watches
-*what survives* in the channel. All three feed into the session report
-for post-op analysis.
+The operator pipeline combines task interpretation, execution/transport components, and three monitoring concepts: drift observes what the agent decides, entropy observes confidence characteristics, and mutation analysis records what survives transformations in the channel. Session reports preserve those observations for later analysis.
+
+This architecture should be evaluated as research code with a deliberately visible attack surface, not as a hardened command-and-control design.
 
 ---
 
-## Defender Perspectives & Known Weaknesses
+## Defender perspectives and historical weaknesses
 
-This section documents the framework's attack surface, cryptographic limitations, and behavioral indicators — written for defenders, researchers, and contributors who want to understand the threat model from the inside.
+This section documents security-relevant implementation choices and previously identified weaknesses. Publishing them is part of the artifact: the repository should be possible to analyze defensively without reverse-engineering its intent from scratch.
 
-Publishing this is intentional. Transparency about how a dual-use tool works is what separates research infrastructure from a weapon. If you're conducting a defensive assessment of this repo, this section is where to start.
+### Dynamic execution boundary
 
----
+A plugin path historically decrypted a remote buffer and executed it through Python `exec()`. That boundary creates full code-execution authority on the agent host if its trust controls fail.
 
-### Dynamic Execution (exec() on Remote Buffers)
+**Repository status:** Ed25519 signature verification was added before plugin execution; the encryptor signs `SHA256(code_bytes)` and unsigned or incorrectly signed plugins are rejected. Historical remediation commit: `bab60dd`.
 
-**What it does:** The plugin execution path in `memory_loader.py` decrypts an AES-GCM blob received over the WebSocket channel and executes it via `exec(decrypted, {})`. The WebSocket client (`core/ws_client.py`) orchestrates the receive-decrypt-execute chain.
+The existence of a signature check does not make arbitrary dynamic execution intrinsically safe; reviewers should continue to treat this boundary as high risk.
 
-**Why it exists:** This is the modularity mechanism — it allows the operator to deliver arbitrary instrumentation payloads to a running agent without disk writes, mimicking fileless malware tradecraft for research observation.
+### Plugin key derivation
 
-**The risk, stated plainly:** If the C2 channel is compromised or the encryption key is obtained, this is full remote code execution on the agent host. There is no sandbox, no capability restriction, and no signature verification on the decrypted payload. A defender observing a Python process invoking `exec()` on a decrypted remote buffer should treat it as high-confidence malicious activity regardless of the operator's intent.
+The historical plugin encryptor derived an AES-GCM key from an eight-character agent identifier, which did not provide meaningful secret entropy.
 
-**Status: Fixed.** Ed25519 signature verification is now enforced before `exec()` in `memory_loader.py`. The plugin encryptor signs `SHA256(code_bytes)` with the operator signing key. Unsigned or incorrectly signed plugins are rejected. See commit `bab60dd`.
+**Repository status:** key derivation was changed to HKDF-SHA256 using `ZDS_PLUGIN_SALT` plus a fixed context string. Historical remediation commit: `3a2989c`.
 
----
+### Mesh handshake authentication
 
-### Weak Plugin Key Derivation
+A historical mesh handshake token was described as an HMAC while actually computing an unkeyed SHA-256 digest over public material.
 
-**What it does:** `tools/plugin_encryptor.py` derives the AES-GCM encryption key from the `agent_id`, padded or truncated to 32 bytes. The `agent_id` is generated as the first 8 characters of a UUID string.
+**Repository status:** the implementation was changed to HMAC-SHA256 and constant-time comparison. Historical remediation commit: `ea805df`.
 
-**The risk:** 8 characters of a UUID is not a secret. The key space is drastically smaller than AES-256 implies. An attacker who can observe agent IDs (trivially possible if C2 traffic is captured) can brute-force or reconstruct plugin keys. The encryption primitive (AES-GCM) is sound; the key derivation is not.
+### TLS verification
 
-**Status: Fixed.** `derive_key()` now uses HKDF-SHA256 with a salt from `ZDS_PLUGIN_SALT` and a fixed context string. The key is no longer derivable from the agent ID alone. See commit `3a2989c`.
+Historical C2-related components disabled certificate verification, creating a straightforward interception opportunity.
 
----
+**Repository status:** the documented remediation introduced certificate-fingerprint pinning when configured and system CA verification otherwise. Historical remediation commit: `2b0ea7a`.
 
-### Mesh Handshake Token Is Not a MAC
-
-**What it does:** `mtls_mesh.py` generates a handshake token via `_sign_handshake()`, described in the docstring as an HMAC. In practice it computes `SHA256(public_key || peer_ip || timestamp)`.
-
-**The risk:** This is not a keyed MAC. It incorporates no secret material. Any peer can compute a valid token from public data alone — which means "no trust without cryptographic proof" does not hold as currently implemented. The mTLS peer authentication claim is overstated.
-
-**Status: Fixed.** `_sign_handshake()` now uses `HMAC-SHA256` keyed on `SHA256(private_key_bytes)`. The token is no longer forgeable from public data alone. `hmac.compare_digest()` prevents timing oracle attacks. See commit `ea805df`.
+These status notes identify repository changes, not independent cryptographic assurance. Review the current implementation and tests before relying on any boundary.
 
 ---
 
-### TLS Verification Disabled
+## Published defensive indicators
 
-**What it does:** Multiple components disable certificate verification when connecting to `wss://` endpoints — `core/exfil_ws.py` and `core/ws_client.py` both set `check_hostname = False` and `CERT_NONE`. The generated agent bundle in `tools/agent_deploy.py` does the same for HTTPS polling.
+The following artifacts are associated with normal framework operation and are retained so defenders can build detections without first reconstructing the codebase.
 
-**The risk:** Any network position capable of intercepting traffic can MitM the C2 channel without detection. This is a significant operational weakness — and also a defensive opportunity. A sinkhole or TLS inspection proxy can silently intercept all C2 communications.
-
-**Status: Fixed.** `_handle_exfil()` in `dispatcher.py` now uses a `FingerprintAdapter` that pins against `ZDS_C2_CERT_FINGERPRINT` when set. Falls back to system CA verification (`verify=True`) — never `verify=False`. See commit `2b0ea7a`.
-
----
-
-### Operational Footprint (Known IoCs)
-
-The following artifacts are written by the framework during normal operation. These are published here proactively so defenders can build detection without reverse-engineering the source.
-
-**Linux filesystem:**
+### Linux filesystem
 
 | Path | Source |
 |---|---|
-| `/tmp/.zds_agent.py` | `tools/agent_deploy.py` — deployed agent script |
-| `/tmp/.zds.log` | Agent runtime log |
-| `/etc/cron.d/systemd-updater` | `persistence.py` — Linux persistence mechanism |
-| `~/.local/bin/sysupd` | `persistence.py` — installed binary path |
-| `loot_log.json` | `tools/c2_ws_server.py` — C2 loot log |
+| `/tmp/.zds_agent.py` | deployed agent artifact |
+| `/tmp/.zds.log` | agent runtime log |
+| `/etc/cron.d/systemd-updater` | persistence simulation artifact |
+| `~/.local/bin/sysupd` | installed binary path used by the persistence path |
+| `loot_log.json` | C2-side collection log |
 
-**Windows registry:**
+### Windows registry
 
-| Key | Value Name | Source |
-|---|---|---|
-| `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | `OneDrive` | `persistence.py` — disguised Run key |
-
-**Network:**
-
-| Indicator | Description |
+| Key | Value name |
 |---|---|
-| WebSocket on TCP 8765 (TLS) | C2 server; JSON messages contain `agent_id`, `payload` fields |
-| DNS TXT query to `tasks.<domain>` | Task retrieval channel |
-| High-volume `dig` with base64 subdomains | DNS exfiltration chunks |
-| MQTT topic `zds/exfil/<agent_id>` | MQTT exfiltration channel |
+| `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | `OneDrive` |
 
-**Environment variables:**
+### Network and environment
 
-`ZDS_AUTH_TOKEN`, `ZDS_C2_WS_URL`, `ZDS_HTTPS_ENDPOINT`, `ZDS_CONTROL_DOMAIN` — presence of any of these in a process environment is a strong indicator of framework operation.
+Potentially useful framework-specific indicators include WebSocket traffic on the configured lab endpoint, DNS task/exfil patterns, MQTT topics under `zds/exfil/`, and process environments containing names such as `ZDS_AUTH_TOKEN`, `ZDS_C2_WS_URL`, `ZDS_HTTPS_ENDPOINT`, or `ZDS_CONTROL_DOMAIN`.
 
----
+Context matters: indicator presence establishes correspondence with a known artifact or configuration pattern, not attribution to a particular operator.
 
-### YARA Detection Rule
+### YARA research rule
+
 ```yara
 rule ZDS_Zer0DAYSlater_Research_Framework
 {
@@ -198,46 +156,38 @@ rule ZDS_Zer0DAYSlater_Research_Framework
 
 ---
 
-### Process Masquerading
+## Process masquerading as a detection surface
 
-`process_cloak.py` uses `setproctitle` and `process_doppelganger.py` uses `prctl(PR_SET_NAME)` to rename the agent process to common system names (`systemd`, `dbus-daemon`, `sshd`, etc.).
+The repository includes Linux process-name manipulation using `setproctitle` / `prctl(PR_SET_NAME)`-style behavior. A useful defensive correlation is a process whose displayed name resembles a normal system binary while its executable path, parentage, environment, or runtime behavior does not match that identity.
 
-**Detection:** Alert on processes whose name matches a known system binary but whose executable path does not correspond to the expected binary location. EDRs and auditd rules filtering on `prctl(PR_SET_NAME)` calls from non-root processes are effective here.
-
----
-
-## Known Dependency Notice
-
-`scapy==2.6.1` is present in `requirements.txt` and has a known deserialization vulnerability (Safety ID 80587). Only process trusted inputs when using Scapy, or isolate its usage. This will be updated when a patched version is available.
+This is a stronger investigative signal when combined with additional telemetry than when treated as a standalone attribution rule.
 
 ---
 
-## Legal Disclaimer
+## Verification boundary
 
-These tools are intended strictly for authorized security research, red team operations, and educational purposes in environments where you have **explicit legal authorization**.
-```
-Authorization Notice:
-Use only in environments where you have explicit written authorization.
-You are solely responsible for compliance with all applicable laws.
-Unauthorized use is illegal and unethical.
-```
+A green CI badge or local test run means the checks configured for that revision passed. It does **not** prove:
 
-Releasing this framework publicly comes with the expectation that the security research community will use it responsibly — to build better defenses, study adversarial tradecraft, and contribute improvements. The Defender Perspectives section above exists because opacity is not a security property.
+- operational effectiveness or stealth
+- resistance to EDR or network controls
+- cryptographic correctness beyond the exercised tests
+- safety of dynamic execution paths
+- suitability for deployment outside an isolated lab
+
+Historical vulnerability descriptions in older README revisions should be checked against the current dependency and implementation state before being repeated as current findings.
 
 ---
 
-## Contributing
+## Provenance
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Priority areas for contribution:
+This repository is retained because deleting historical adversarial research would erase useful implementation history, defensive indicators, and remediation lineage. It is intentionally not positioned as the front door to current badBANANA work.
 
-- Cross-session fitness persistence for the mutation engine
-- Persistent mesh node identity across sessions
-- Gradual degradation detection below threshold
-- Additional exfil channel implementations (ICMP, covert HTTP)
+For current public research, start from the main GnomeMan4201 profile and the projects explicitly featured there.
 
 ---
 
 ## Author
 
 **GnomeMan4201**
-[dev.to/gnomeman4201](https://dev.to/gnomeman4201) · [github.com/GnomeMan4201](https://github.com/GnomeMan4201)
+
+badBANANA Research
