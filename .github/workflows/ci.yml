@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -33,7 +36,10 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 --select=F401,F811,F841,W291,W293,W391             dispatcher.py entropy_capsule.py session_drift_monitor.py             payload_mutator.py mtls_mesh.py memory_loader.py             llm_operator.py tools/session_report.py tools/compare_sessions.py
+          flake8 --select=F401,F811,F841,W291,W293,W391 \
+            dispatcher.py entropy_capsule.py session_drift_monitor.py \
+            payload_mutator.py mtls_mesh.py memory_loader.py \
+            llm_operator.py tools/session_report.py tools/compare_sessions.py
 
       - name: Verify no hardcoded secrets
         run: |
