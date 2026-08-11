@@ -12,7 +12,7 @@
 
 `zer0DAYSlater` is retained as an adversarial-systems research artifact rather than presented as a current flagship or production red-team platform.
 
-Its useful public value is inspectability: the repository exposes implementation choices, defensive indicators, historical weaknesses and fixes, and an instrumented lab surface for studying how post-exploitation-style behaviors appear to defenders.
+Its useful public value is inspectability: the repository exposes implementation choices, defensive indicators, historical weaknesses, remediation attempts, and an instrumented lab surface for studying how post-exploitation-style behaviors appear to defenders.
 
 The framework includes dual-use mechanisms. Treat the repository as **isolated-lab research code**, not as a deployment recommendation.
 
@@ -24,7 +24,7 @@ The codebase explores observable behavior around:
 
 - process-name masquerading and evasion instrumentation
 - multi-channel transport and fallback behavior
-- peer-to-peer agent coordination and authentication
+- peer-to-peer coordination and authentication failure modes
 - LLM-assisted operator/session analysis
 - local task dispatch and instrumented execution paths
 - session logging, replay, and defensive artifact generation
@@ -59,7 +59,7 @@ The repository also retains a local demo harness:
 ./scripts/demo.sh
 ```
 
-A passing test/demo run establishes only the behavior covered by that revision's harness. It does not establish stealth, operational effectiveness, or suitability for a real environment.
+A passing test/demo run establishes only the behavior covered by that revision's harness. It does not establish stealth, operational effectiveness, cryptographic assurance, or suitability for a real environment.
 
 ---
 
@@ -79,7 +79,7 @@ This section documents security-relevant implementation choices and previously i
 
 A plugin path historically decrypted a remote buffer and executed it through Python `exec()`. That boundary creates full code-execution authority on the agent host if its trust controls fail.
 
-**Repository status:** Ed25519 signature verification was added before plugin execution; the encryptor signs `SHA256(code_bytes)` and unsigned or incorrectly signed plugins are rejected. Historical remediation commit: `bab60dd`.
+**Repository status:** Ed25519 signature verification was added before plugin execution; the encryptor signs `SHA256(code_bytes)` and the current loader rejects missing or invalid signatures before reaching `exec()`. Historical remediation commit: `bab60dd`.
 
 The existence of a signature check does not make arbitrary dynamic execution intrinsically safe; reviewers should continue to treat this boundary as high risk.
 
@@ -89,11 +89,15 @@ The historical plugin encryptor derived an AES-GCM key from an eight-character a
 
 **Repository status:** key derivation was changed to HKDF-SHA256 using `ZDS_PLUGIN_SALT` plus a fixed context string. Historical remediation commit: `3a2989c`.
 
+The implementation contains a deterministic fallback salt when `ZDS_PLUGIN_SALT` is not configured. That fallback improves derivation structure but is not an out-of-band secret; a real trust boundary requires an operator-supplied random salt.
+
 ### Mesh handshake authentication
 
-A historical mesh handshake token was described as an HMAC while actually computing an unkeyed SHA-256 digest over public material.
+A historical mesh handshake token used an unkeyed SHA-256 digest over public material. Commit `ea805df` attempted to harden the signer with HMAC-SHA256 and constant-time comparison.
 
-**Repository status:** the implementation was changed to HMAC-SHA256 and constant-time comparison. Historical remediation commit: `ea805df`.
+**Current status: unresolved / internally inconsistent.** The current `_sign_handshake()` emits an HMAC keyed from the sender's private material, but the live `_handle_handshake()` path calls `_verify_handshake()` without that HMAC key. The verifier then falls back to bare SHA-256 over public data. Because the sender emits HMAC while the live verifier computes bare SHA-256, the real call path does not establish a functioning authenticated handshake. Tests that manually supply the HMAC key do not exercise this live peer-verification boundary.
+
+Do not treat the mesh `VERIFIED` state as a cryptographically validated trust guarantee in the current revision. Correct peer authentication requires a protocol redesign with a verifier-available trust anchor or proof-of-possession mechanism, not another wording change.
 
 ### TLS verification
 
@@ -101,7 +105,7 @@ Historical C2-related components disabled certificate verification, creating a s
 
 **Repository status:** the documented remediation introduced certificate-fingerprint pinning when configured and system CA verification otherwise. Historical remediation commit: `2b0ea7a`.
 
-These status notes identify repository changes, not independent cryptographic assurance. Review the current implementation and tests before relying on any boundary.
+These status notes identify repository changes and current source observations, not independent cryptographic assurance.
 
 ---
 
@@ -171,10 +175,11 @@ A green CI badge or local test run means the checks configured for that revision
 - operational effectiveness or stealth
 - resistance to EDR or network controls
 - cryptographic correctness beyond the exercised tests
+- functioning peer authentication on the current mesh handshake path
 - safety of dynamic execution paths
 - suitability for deployment outside an isolated lab
 
-Historical vulnerability descriptions in older README revisions should be checked against the current dependency and implementation state before being repeated as current findings.
+Historical vulnerability descriptions and remediation commits should be checked against the current call paths before being repeated as current findings.
 
 ---
 
